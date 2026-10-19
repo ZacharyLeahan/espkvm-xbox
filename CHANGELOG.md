@@ -18,6 +18,17 @@ bumps the patch).
 - Add opt-in PCM sender task-state sampling with separate successful-write and
   disconnect counts; leave it disabled by default to avoid playback overhead.
 
+### Documentation
+
+- Record the proposed learned touchscreen navigation loop and its phased
+  validation plan; mark it as unimplemented.
+
+- Condense the README around the real-Xbox agentic loop, link the Slime Volley
+  example, and highlight controller input, video, audio, screenshots, and recordings.
+
+- Document the planned solder-free four-player Wi-Fi controller rig, agent-driven
+  multiplayer testing and logging goals, and $274.85 in recorded hardware spend.
+
 ### Fixed
 
 - Bound plain-HTTP send retries with nonblocking writes; allow PCM stalls up to

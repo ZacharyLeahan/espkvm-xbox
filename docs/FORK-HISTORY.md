@@ -19,6 +19,9 @@ the 2026-10-16 audio validation.
 | **Three main purchases** | | | **$220.03** |
 | [Female USB to Xbox controller port adapter cable, first-generation Xbox, 70 cm](https://www.ebay.com/itm/147474591575) | Xbox controller port to USB-A female | eBay, seller `nextgendeals07` | $6.25 |
 | **Including controller-port adapter** | | | **$226.28** |
+| Three additional original Xbox-to-USB adapters (four total including the original) | Planned one-adapter-per-player setup | eBay, same listing | $17.97 |
+| Four Waveshare ESP32-S3-Zero boards (SKU 25081) | Planned Wi-Fi-to-XID dongles for all four ports; ordered, not yet arrived as of 2026-10-17 | Waveshare | $30.60 |
+| **Documented all-in spend including planned four-player hardware** | | | **$274.85** |
 
 These are historical order totals verified against September 18 (AliExpress),
 September 30 (Amazon), and October 2 (eBay) 2026 confirmation emails, not current
@@ -26,6 +29,14 @@ quotes or availability guarantees. The LCD item was $36.95 before its $39.17
 order total. The eBay cable was $5.89 plus $0.36 tax, with free shipping. Totals
 exclude the Xbox HDMI adapter, USB-A-to-USB-C data cable, microSD card,
 controller, power supply, other cables, and case.
+
+The October 16, 2026 confirmation emails add four Waveshare boards at $5.15
+each ($20.60 subtotal plus $10 shipping, $30.60 paid) and three more adapters
+($17.67 subtotal plus $1.02 tax minus $0.72 discount, $17.97 paid, free shipping).
+Together with the original $6.25 adapter, all four adapters cost $24.22. The
+$274.85 total includes the ordered multiplayer hardware but retains the accessory
+exclusions above. See the [four-player plan](XBOX-RIG-DETAILS.md#planned-four-player-wireless-homebrew-testing)
+for intended wiring, agent testing, logging, and validation still to do.
 
 The LCD is optional for browser capture and needs no HDMI splitter. The Xbox
 controller-port adapter does not translate protocols: Xbox-mode firmware
