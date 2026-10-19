@@ -20,8 +20,14 @@ bumps the patch).
 
 ### Documentation
 
+- Record the proposed learned touchscreen navigation loop and its phased
+  validation plan; mark it as unimplemented.
+
 - Condense the README around the real-Xbox agentic loop, link the Slime Volley
   example, and highlight controller input, video, audio, screenshots, and recordings.
+
+- Document the planned solder-free four-player Wi-Fi controller rig, agent-driven
+  multiplayer testing and logging goals, and $274.85 in recorded hardware spend.
 
 ### Fixed
 

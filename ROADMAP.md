@@ -48,6 +48,9 @@ and use [Discussions](https://github.com/espkvm/espkvm/discussions) for ideas.
 
 ## Under consideration
 
+- **Xbox learned touch navigation** - a Mac-assisted visual feedback loop that
+  translates taps into controller navigation and caches verified procedures.
+  [Idea and phased plan](ROADMAP-TOUCH-NAVIGATION.md); not implemented.
 - Serial console passthrough - a terminal in the console, on a free UART or as a USB serial port the target sees
 - A USB network interface to the target
 - A VNC server - reach the target from any VNC client, no browser
