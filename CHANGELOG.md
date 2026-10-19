@@ -18,6 +18,11 @@ bumps the patch).
 - Add opt-in PCM sender task-state sampling with separate successful-write and
   disconnect counts; leave it disabled by default to avoid playback overhead.
 
+### Documentation
+
+- Condense the README around the real-Xbox agentic loop, link the Slime Volley
+  example, and highlight controller input, video, audio, screenshots, and recordings.
+
 ### Fixed
 
 - Bound plain-HTTP send retries with nonblocking writes; allow PCM stalls up to
