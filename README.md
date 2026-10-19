@@ -1,70 +1,96 @@
 # ESP-KVM for the Original Xbox
 
-[espkvm-xbox](https://github.com/ZacharyLeahan/espkvm-xbox) is an original Xbox fork of [ESP-KVM](https://github.com/espkvm/espkvm): HDMI capture, browser viewing and audio, a local touchscreen, microSD video/audio recording, and controller input on a real console. The goal is repeatable homebrew testing by people and coding agents.
+**Give a coding agent eyes, ears, and controller input on a real Xbox.**
+This [ESP-KVM](https://github.com/espkvm/espkvm) fork turns an ESP32-P4 into a
+hardware testing interface: an agent can control the console, see its HDMI
+output, hear captured HDMI audio, take screenshots, and save video/audio
+recordings to guide its next code change.
 
-The maintained Xbox branch is [`main`](https://github.com/ZacharyLeahan/espkvm-xbox/tree/main). Feature branches hold work under review; the `upstream` remote tracks the original ESP-KVM project, including `upstream/main`. We review upstream changes selectively in the [adaptation ledger](docs/UPSTREAM-REVIEW.md).
+## Why an agentic loop matters
 
-The `upstream-reliability-xbox` review branch adapts bridge recovery, settings,
-video delivery, Microlink reliability and memory diagnostics. Its published
-console/Microlink pins are reproducible, but combined-device acceptance is still
-in progress; see the [current validation ledger](docs/UPSTREAM-REVIEW.md).
+**Build → deploy → play → see and hear the result → fix → repeat.**
 
-## What works
+Instead of asking a person to test every change, an agent can send repeatable
+controller inputs, inspect the actual console output, and use screenshots and
+recordings to investigate failures and check the next build. That shortens the
+feedback loop for gameplay, menus, graphics, and sound while keeping evidence
+from real hardware.
 
-- **Video:** 480p and 720p Xbox HDMI capture, LAN/Tailscale viewing, and optional 640×480 touchscreen preview. The 720p picture is scaled to 640×360 on the LCD.
-- **Controller input:** the ESP's DEVICE USB port emulates an original Xbox controller, driven by browser keys, proportional touchscreen sticks, a Bluetooth Xbox Series controller, or bounded network input sequences with automatic release.
-- **HDMI audio:** opt-in stereo PCM capture from the C790's separate I2S connector, browser playback with volume/meter and bounded reconnect, plus a tool that saves WAV evidence on a computer. The camera ribbon carries video only.
-- **Touchscreen and recording:** stats, controller controls, Bluetooth setup, ordered input history, clean-screen mode, and Record/Stop to microSD with H.264 video and optional AAC stereo audio. MP4 export preserves sound; GIFs are silent.
-- **Testing tools:** a read-only video evidence collector and bounded audio recording. An agent triggered kickflips and a kickflip → manual → kickflip sequence on the real Xbox; the player confirmed the results. Those demos used ad-hoc commands.
+[Slime Volley for Xbox](https://github.com/ZacharyLeahan/slimevolley-nxdk) is a
+practical example: we rapidly developed and tested the playable nxdk port using
+this agentic loop. The agent used ESP-KVM to inspect the screen, send controller
+inputs, and capture the results while iterating on the game. The project's
+[gameplay screenshots and testing notes](https://github.com/ZacharyLeahan/slimevolley-nxdk#agent-testing-on-real-hardware)
+show that workflow on an original Xbox. Builds were deployed and read back
+through the Xbox dashboard's FTP service; ESP-KVM supplied observation and input.
 
-## Evidence and limits
+The pieces work today through agent tools and scripts. A general autonomous test
+runner, automatic deployment/launch, and reliable recovery from console hangs
+remain future work.
 
-These are observations on our hardware, under different test configurations:
+## What it can do
 
-| Check | Result |
+| Capability | For people and agents |
 | --- | --- |
-| Local 720p preview | 28–29 LCD updates/sec with three buffers and CPU scaling. |
-| Wi-Fi MJPEG video | Ten minutes, two viewers: 4.74 delivered FPS average, zero reconnects, 6-FPS cap and JPEG quality 75. Capture was about 60 FPS. |
-| Simultaneous 480p recording/preview | About 26 recording FPS and 26–27 LCD updates/sec, zero recorder-reported drops in that trial. |
-| Live HDMI audio with web video | A 60-second HTTP capture stayed connected and saved 59.64 seconds of non-silent 48 kHz stereo PCM; brief DMA overruns recovered. Real browser audio also ran beyond 74 seconds. |
-| MicroSD video + audio | One-minute 720p clip decoded with stereo 48 kHz AAC; zero recorder audio/video queue drops, about 14.4 video FPS with simultaneous network audio. [Test details](docs/SD-RECORDING.md#hardware-verification-2026-10-16). |
-| Bluetooth controller | All buttons operator-confirmed in Xbox Controller Tool on 2026-10-11. |
+| **Control** | Emulate an original Xbox controller over USB; send bounded network input sequences with automatic release. Browser keys, touchscreen sticks, and a Bluetooth Xbox Series controller also work. |
+| **See** | Capture 480p/720p HDMI, view over LAN/Tailscale, and grab screenshots as test evidence. An optional touchscreen provides local preview. |
+| **Hear** | Capture stereo HDMI audio for browser listening or bounded WAV recordings on a computer, giving agents sound evidence alongside images. |
+| **Record** | Save H.264 video with optional AAC stereo audio to microSD, then export MP4 with sound. GIF exports are silent. |
 
-Audio is working, but brief gaps remain possible. Subjective sound quality, audio/video synchronization, and physical end-to-end latency are unverified; the browser's 43–44 ms queue measurement is only local buffering. There is **one network audio listener**: mute the viewer before using the WAV tool. The microSD recorder has its own audio subscription and can run alongside either. Stereo LPCM is required; Dolby/DTS passthrough is not decoded.
+Audio uses the C790's **separate I2S connector**; the camera ribbon carries video
+only. Stereo LPCM is required. There is one network audio listener, so mute the
+browser before using the WAV tool; microSD recording has its own subscription.
+Brief audio gaps remain possible, and audio/video synchronization and end-to-end
+latency are unverified. A remote video viewer reduces local LCD preview to at
+most 1 FPS. See [measurements and remaining limits](docs/XBOX-RIG-DETAILS.md).
 
-Connecting a remote video viewer reduces the LCD to at most 1 FPS; disconnecting restores local preview. Long sessions, repeated HDMI mode changes, remote Tailscale performance, and simultaneous 720p recording/preview need more validation. Bluetooth bonds do not survive an ESP reboot, reconnection needs reliability testing, and rumble is not forwarded.
+## Hardware
 
-Automated deployment/launch, reliable recovery from console hangs, named input macros, and an autonomous test runner remain future work. The current tools complement emulator/debugger workflows with real-console evidence.
+The tested rig uses an **ESP32-P4 Function EV** (rev 3.2, C6 Wi-Fi),
+**Geekworm C790** HDMI-to-CSI bridge, and optional **Waveshare 3.5-inch DSI LCD (E)**.
 
-[Audio measurements and configuration](docs/HDMI-AUDIO.md) · [Video investigation](docs/XBOX-CAPTURE-DEBUG.md) · [Historical tests and hardware costs](docs/FORK-HISTORY.md)
+- **Video:** Xbox HDMI → C790 → ESP **MIPI CAMERA**; optional **MIPI DISPLAY** → LCD.
+- **Audio:** C790 I2S → ESP headers using the [verified wiring](docs/HDMI-AUDIO.md#header-cross-check-2026-10-16).
+- **Input:** Xbox controller port → USB adapter → USB data cable → ESP **DEVICE USB**.
+- **Power/flashing:** separate **USB-Serial-JTAG** connection. Power off before handling ribbons.
 
-## Hardware and connections
+The main board, bridge, and LCD cost $220.03. Documented spend including four
+controller adapters and four ordered S3-Zero boards is **$274.85**;
+[receipt details and exclusions](docs/FORK-HISTORY.md#hardware-purchases).
 
-Our setup uses an **ESP32-P4 Function EV board** (P4 rev 3.2, C6 Wi-Fi), **Geekworm C790** HDMI-to-CSI bridge, and optional **Waveshare 3.5-inch DSI LCD (E)**. The three purchases totaled $220.03, or $226.28 with the Xbox controller-port adapter; [historical order totals and exclusions](docs/FORK-HISTORY.md#hardware-purchases) are documented separately.
-
-- **Video:** Xbox HDMI → C790 → ESP **MIPI CAMERA**. Optional ESP **MIPI DISPLAY** → LCD. Power off before handling ribbons and check contact orientation.
-- **Audio:** C790 I2S → four ESP header connections. Use the [verified Function EV wiring and audio settings](docs/HDMI-AUDIO.md#header-cross-check-2026-10-16).
-- **Controller:** Xbox controller port → female USB adapter → USB-A-to-USB-C data cable → ESP **DEVICE USB**. The firmware provides XID emulation; the adapter is just a cable.
-- **Power/flashing:** use **USB-Serial-JTAG**. This is separate from the controller connection.
-
-The Waveshare screen works in this fork but is not a vendor-supported configuration. LCD setup and investigation are in [DSI-PREVIEW.md](docs/DSI-PREVIEW.md).
+**Planned: four-player agent testing.** Four Wi-Fi-connected ESP32-S3-Zero dongles
+would provide one controller per Xbox port, letting agents exercise multiplayer
+interactions while the main KVM captures video and audio. This extension is
+unbuilt; see the [hardware plan and validation goals](docs/XBOX-RIG-DETAILS.md#planned-four-player-wireless-homebrew-testing).
 
 ## Build and use
 
-Clone with submodules, then follow the [Xbox build instructions](docs/XBOX-FORK.md). ESP-IDF 6.1 is required. The [recommended LCD profile](docs/DSI-PREVIEW.md#recommended-build) uses `boards/funcev_dsi_live.defaults`; browser-only builds can leave the LCD disabled. Initial LCD startup can take roughly 30 seconds.
+Clone with submodules and follow the [Xbox build instructions](docs/XBOX-FORK.md)
+(ESP-IDF 6.1). For the LCD, use the
+[recommended profile](docs/DSI-PREVIEW.md#recommended-build); initial startup can
+take roughly 30 seconds. Copy [`.env.example`](.env.example) to an ignored `.env`
+for Wi-Fi settings and keep credentials and firmware containing them private.
+After editing `web/`, run its typecheck, tests, and build before rebuilding firmware.
 
-Copy [`.env.example`](.env.example) to an ignored `.env` for local Wi-Fi configuration. Keep credentials and credential-containing firmware private. After changing `web/`, run its typecheck, tests, and build before rebuilding firmware so the embedded console is updated.
+Enable **HDMI audio** in Settings for capture and microSD sound; click
+**Enable audio** to listen in the browser. See the [audio setup](docs/HDMI-AUDIO.md).
 
-For audio, follow [HDMI-AUDIO.md](docs/HDMI-AUDIO.md) and enable **HDMI audio** in Settings. Normal Record/Stop then includes sound on microSD; click **Enable audio** to listen in the viewer. The final audio-enabled and disabled firmware builds passed; web typecheck, 68 web tests, and three recording-tool tests passed. Live testing used HTTP; HTTPS audio was reviewed but not hardware-validated.
-
-**Security:** this experimental profile uses HTTP without an application login. Tailscale protects tailnet traffic; the LAN interface remains unauthenticated. Use a trusted, restricted LAN and do not port-forward it.
+**Security:** this experimental profile uses HTTP without an application login.
+Use a trusted, restricted LAN and do not port-forward it. Tailscale protects
+traffic carried over the tailnet.
 
 | Guide | Contents |
 | --- | --- |
-| [Controller setup](docs/XBOX-REMOTE-CONTROLLER.md) | USB wiring, Bluetooth pairing, mappings, and limitations. |
+| [Agent testing](docs/XBOX-TESTING.md) | Observation helper, screenshots, fresh-frame evidence, and regression checks. |
+| [Controller setup](docs/XBOX-REMOTE-CONTROLLER.md) | USB wiring, Bluetooth pairing, mappings, and limits. |
 | [Recording](docs/SD-RECORDING.md) | microSD recording, MP4 export, and GIF workflow. |
-| [Testing](docs/XBOX-TESTING.md) | Observation helper, fresh-frame evidence, and regression checklist. |
-| [Fork history](docs/FORK-HISTORY.md) | Hardware receipts, earlier performance/recovery tests, and development direction. |
+| [Rig details](docs/XBOX-RIG-DETAILS.md) | Measurements, connections, limitations, and four-player plan. |
+| [Fork history](docs/FORK-HISTORY.md) | Receipts, earlier tests, and development direction. |
+| [Upstream review](docs/UPSTREAM-REVIEW.md) | Selective adaptations and pending device acceptance. |
+
+The maintained branch is [`main`](https://github.com/ZacharyLeahan/espkvm-xbox/tree/main).
+Feature branches hold work under review; combined-device acceptance for
+`upstream-reliability-xbox` remains in progress in the review ledger.
 
 ## Credits
 
