@@ -191,11 +191,16 @@ ESP_STATIC_ASSERT(CFG_TUD_VENDOR_TX_BUFSIZE >= EP_SIZE_VENDOR, "Vendor TX buffer
 
 // Enabled device class driver
 #define CFG_TUD_CDC                 CONFIG_TINYUSB_CDC_COUNT
-/* ESP-KVM fork: force the MSC class driver on in the underlying tinyusb without
+/* ESP-KVM fork: default the MSC class driver on in the underlying tinyusb without
  * enabling this component's storage model. CONFIG_TINYUSB_MSC_ENABLED stays 0, so
  * tinyusb_msc.c / storage_*.c and the app<->usb mount handoff never compile; ESP-KVM
- * owns the SD card the whole time and provides its own tud_msc_*_cb (see kvm_hid). */
+ * owns the SD card the whole time and provides its own tud_msc_*_cb (see kvm_hid).
+ * The standalone S3 shim disables this class because it has no storage callbacks. */
+#ifdef CONFIG_TINYUSB_KVM_MSC_CLASS
 #define CFG_TUD_MSC                 1
+#else
+#define CFG_TUD_MSC                 0
+#endif
 #define CFG_TUD_HID                 CONFIG_TINYUSB_HID_COUNT
 #define CFG_TUD_MIDI                CONFIG_TINYUSB_MIDI_COUNT
 #define CFG_TUD_VENDOR              CONFIG_TINYUSB_VENDOR_COUNT

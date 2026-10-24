@@ -55,13 +55,16 @@ The tested rig uses an **ESP32-P4 Function EV** (rev 3.2, C6 Wi-Fi),
 - **Power/flashing:** separate **USB-Serial-JTAG** connection. Power off before handling ribbons.
 
 The main board, bridge, and LCD cost $220.03. Documented spend including four
-controller adapters and four ordered S3-Zero boards is **$274.85**;
+controller adapters and four S3-Zero boards is **$274.85**;
 [receipt details and exclusions](docs/FORK-HISTORY.md#hardware-purchases).
 
-**Planned: four-player agent testing.** Four Wi-Fi-connected ESP32-S3-Zero dongles
-would provide one controller per Xbox port, letting agents exercise multiplayer
-interactions while the main KVM captures video and audio. This extension is
-unbuilt; see the [hardware plan and validation goals](docs/XBOX-RIG-DETAILS.md#planned-four-player-wireless-homebrew-testing).
+**Player 1 now works over Wi-Fi.** A Waveshare ESP32-S3-Zero emulates one Xbox
+controller, receiving full-resolution state from the main KVM over home Wi-Fi.
+All buttons, trigger pressure, both stick axes and circular sweeps were checked
+in Xbox Controller Tool: [164-state hardware validation](docs/S3-PLAYER1-VALIDATION.md).
+[Build and pairing instructions](s3-dongle/README.md) cover the first board;
+[the four-player extension](docs/XBOX-RIG-DETAILS.md#planned-four-player-wireless-homebrew-testing)
+remains planned.
 
 ## Build and use
 

@@ -288,8 +288,9 @@ cc -std=c11 -Wall -Wextra -Werror -I components/kvm_hid/include \
 /tmp/test_xbox_report
 ```
 
-Touchscreen/browser controller overlays and proportional analog input are
-next steps after real-console enumeration and button tests succeed.
+Full-resolution analog state is available through the raw WebSocket command
+below. Keyboard mapping still uses endpoints; a proportional browser gamepad
+panel and physical browser Gamepad API support remain future work.
 
 Bounded button tester (Node 22+, existing authenticated/local control access):
 
@@ -314,3 +315,27 @@ The first milestone is intentionally small: one emulated Controller S in port
 1, digital buttons, sticks, and triggers. Rumble, physical browser Gamepad API
 input, multiple controllers, and polished touch controls can follow after the
 console recognizes and reads the virtual controller reliably.
+
+## Full-resolution controller state
+
+In `KVM_USB_XBOX` builds, authenticated `/ws` accepts `0x08` plus exactly 20
+original-Xbox XID input bytes. It participates in the existing first-come control
+lease and explicit `0x07` takeover; a viewer cannot inject it. The same touch and
+fresh Bluetooth priorities apply. Invalid frames are ignored. No REST endpoint
+shape or existing opcode changed.
+
+| XID offsets (after the opcode) | Meaning |
+| --- | --- |
+| 0, 1 | Must be 0, 20 |
+| 2 | Bits 0..7: Up, Down, Left, Right, Start, Back, left click, right click |
+| 3 | Reserved; must be zero |
+| 4..9 | A, B, X, Y, Black, White pressure, each 0..255 |
+| 10..11 | Left and right trigger pressure, each 0..255 |
+| 12, 14, 16, 18 | Left X/Y and right X/Y, signed little-endian 16-bit |
+
+Keep refreshing held state (100 ms is sufficient); it expires after 500 ms.
+Opcode `0x05` releases input and closing the controlling session releases it too.
+The main P4 can output locally or use the paired S3 player-1 route without
+changing this input format. All 164 test states were verified on the actual
+Xbox, including intermediate pressures and circular stick motion; see
+[S3 player-1 validation](S3-PLAYER1-VALIDATION.md).

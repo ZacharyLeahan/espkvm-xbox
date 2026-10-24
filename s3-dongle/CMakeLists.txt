@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+cmake_minimum_required(VERSION 3.16)
+option(S3_USE_PARENT_TINYUSB "Reuse the parent checkout's locked TinyUSB" ON)
+if(S3_USE_PARENT_TINYUSB AND EXISTS "${CMAKE_CURRENT_LIST_DIR}/../managed_components/espressif__tinyusb/CMakeLists.txt")
+    set(EXTRA_COMPONENT_DIRS "../managed_components/espressif__tinyusb")
+    set(ENV{IDF_COMPONENT_MANAGER} 0)
+endif()
+set(COMPONENTS main)
+include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+project(xbox_s3_dongle VERSION 0.2.1)

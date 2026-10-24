@@ -1,4 +1,11 @@
 menu "TinyUSB Stack"
+    config TINYUSB_KVM_MSC_CLASS
+        bool "Compile the KVM-managed mass-storage class"
+        default y
+        help
+            Keep the P4 KVM's custom storage callbacks available. Disable for
+            the standalone S3 controller, which has no mass-storage interface.
+
     config TINYUSB_DEBUG_LEVEL
         int "TinyUSB log level (0-3)"
         default 1

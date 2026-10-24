@@ -1,0 +1,7 @@
+# Thin shim for the existing ESP-KVM wrapper, with the storage class disabled.
+# Pin the same stack when a standalone build cannot reuse the parent dependency.
+dependencies:
+  idf: '>=5.0'
+  tinyusb:
+    public: true
+    version: '0.21.0~1'

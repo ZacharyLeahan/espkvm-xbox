@@ -5,6 +5,9 @@
 #include "sdkconfig.h"
 #if CONFIG_KVM_USB_XBOX
 #include "usb_xbox.h"
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+#include "xbox_s3_route.h"
+#endif
 #include "xbox_report.h"
 #include "xbox_input_history.h"
 #include "device/usbd_pvt.h"
@@ -91,6 +94,16 @@ void usb_xbox_keyboard(const uint8_t keys[6])
     xbox_keyboard_report(keys, report);
     /* Saturation must never lose a release and leave a held button. */
     if (xQueueSend(s_queue, report, 0) != pdTRUE) queue_release();
+    xSemaphoreGive(s_input_mu);
+}
+
+void usb_xbox_remote_report(const uint8_t report[20])
+{
+    if(!s_queue || !xbox_report_valid(report))return;
+    if(xSemaphoreTake(s_input_mu,pdMS_TO_TICKS(10))!=pdTRUE)return;
+    if(esp_timer_get_time()>=s_local_until && esp_timer_get_time()>=s_bluetooth_until) {
+        if(xQueueSend(s_queue,report,0)!=pdTRUE)queue_release();
+    }
     xSemaphoreGive(s_input_mu);
 }
 
@@ -193,6 +206,13 @@ usbd_class_driver_t const *usbd_app_driver_get_cb(uint8_t *count)
 static void xid_pump(void *unused)
 {
     (void)unused;
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+    if (xQueueReceive(s_queue,s_state,0)==pdTRUE) s_deadline=esp_timer_get_time()+500000;
+    if (esp_timer_get_time()>=s_deadline) { memset(s_state,0,20); s_state[1]=20; }
+    xbox_s3_route_tick(s_state);
+    observe_input(s_state);
+    return;
+#endif
     if (!s_open || !tud_mounted() || tud_suspended()) {
         usb_xbox_release();
         memset(s_state,0,20); s_state[1]=20;
@@ -212,8 +232,17 @@ static void xid_worker(void *arg)
 {
     (void)arg;
     for (;;) {
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+        xid_pump(NULL);
+#else
         usbd_defer_func(xid_pump,NULL,false);
+#endif
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+        /* Keep queued REST press/release edges a full S3 USB poll apart. */
+        vTaskDelay(pdMS_TO_TICKS(20));
+#else
         vTaskDelay(pdMS_TO_TICKS(10));
+#endif
     }
 }
 
@@ -226,6 +255,12 @@ esp_err_t usb_xbox_init(void)
     if (!s_queue) return ESP_ERR_NO_MEM;
     s_input_mu=xSemaphoreCreateMutex();
     if (!s_input_mu) return ESP_ERR_NO_MEM;
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+    err=xbox_s3_route_init();
+    if(err!=ESP_OK)return err;
+    if(xTaskCreate(xid_worker,"xbox_s3",6144,NULL,8,NULL)!=pdPASS)return ESP_ERR_NO_MEM;
+    return ESP_OK;
+#endif
     tinyusb_config_t cfg=TINYUSB_DEFAULT_CONFIG();
     cfg.descriptor.device=&device;
     cfg.descriptor.full_speed_config=configuration;

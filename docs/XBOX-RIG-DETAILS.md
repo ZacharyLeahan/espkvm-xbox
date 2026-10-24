@@ -56,10 +56,17 @@ coordination without its own USB controller connection to the Xbox. The intended
 setup needs no soldering, headers, jumper wires, or separate dongle power
 supplies. Each board is initially programmed over USB from a computer.
 
-**Status as of 2026-10-17:** four boards are ordered and have not arrived; four
+**Original plan as of 2026-10-17:** four boards were ordered; four
 Xbox-to-USB adapters have been purchased in total (the original plus three more).
-This is a planned firmware/hardware extension. First validate one dongle's XID
-emulation and Xbox-port power with Wi-Fi active, then validate all four together.
+On 2026-10-24 the boards arrived and the operator confirmed the first S3
+USB/Wi-Fi controller test worked on the Xbox. Home-network player-1 routing
+was then validated through XBMC navigation and a visible B press/release in
+Xbox Controller Tool. A [164-state follow-up sweep](S3-PLAYER1-VALIDATION.md)
+verified all buttons, intermediate pressures, both stick axes and circles.
+Standalone firmware and the
+opt-in home-network player-1 P4 route are documented in
+[the S3 firmware notes](../s3-dongle/README.md). Full four-player operation
+remains a planned extension.
 Physical wireless gamepad pairing to the dongles would be a separate feature.
 
 The testing work should add per-player routing, bounded sequences with automatic
