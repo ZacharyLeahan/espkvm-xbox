@@ -11,8 +11,7 @@ soldered connections; I do not want to do the soldering myself.
 - **Plug-in adapter:** insert a pass-through between the motherboard and original
   front-panel cable, as pictured below.
 - **Professionally soldered leads:** attach wires in parallel across the verified
-  POWER switch contacts, preferably on the front button board. Add EJECT too if
-  practical. Insulate the joints, provide strain relief so cable pulls cannot
+  POWER and EJECT switch contacts, preferably on the front button board. Insulate the joints, provide strain relief so cable pulls cannot
   load the solder pads, and route the wires to a keyed removable connector.
   Preserve the original buttons, LEDs and wiring; removal would require desoldering.
 
@@ -22,7 +21,6 @@ The electrical function is the same for either option:
 ```text
 Verified POWER contacts -> strain-relieved lead -> keyed disconnect -> POWER relay
 Verified EJECT contacts -> strain-relieved lead -> keyed disconnect -> EJECT relay
-                                                                       (optional)
 ```
 
 ## Plug-in adapter example
@@ -33,19 +31,18 @@ Xbox motherboard       NEW plug-in adapter       Original front-panel cable
                               |
                               +---- POWER + return ---> POWER relay (NO + COM)
                               |
-                              +---- EJECT + return ---> EJECT relay (optional)
+                              +---- EJECT + return ---> EJECT relay (NO + COM)
 ```
 
 The adapter plugs between the motherboard and the existing front-panel cable.
-The original buttons and LEDs keep working. The extra two-wire lead lets an
-external relay briefly close the same circuit as the physical POWER button.
+The original buttons and LEDs keep working. Each extra two-wire pair lets its
+relay briefly close the same circuit as the corresponding physical button.
 
 ## Example: the old Xecuter adapter
 
 Something like the **[Xecuter X3 Power/Eject No Solder Adapter, shown on page 12
 of this guide](https://connortumbleson.com/uploads/2024/03/x3_ce_v10_v16.pdf#page=12)**,
-but with a POWER connection for our relay and, if practical, a separate EJECT
-connection as well.
+but with separate POWER and EJECT connections for two independent relays.
 
 ![Historical Xecuter adapter installed between the Xbox and front-panel cable](roadmap-assets/x3-power-eject-adapter-closeup.png)
 
@@ -57,8 +54,7 @@ This is a historical example, not a photo or verified pinout of the new adapter.
   installed soldered leads with strain relief. Preserve all original controls.
 - A labeled two-wire POWER/return lead with a keyed disconnect, including both
   connector halves. Please quote about 0.5 m of usable cable.
-- **If practical, please also include independent EJECT control.** Quote the
-  additional lead/connector so we can operate both buttons separately. Two
+- **Include both independent POWER and EJECT control in the build.** Two
   labeled two-wire pairs are preferred; a keyed three-wire POWER/EJECT/shared
   Xbox return cable is acceptable only after verifying the common return.
 - Label each relay pair **NO / POWER** or **NO / EJECT**, and **COM / Xbox return**.
@@ -70,8 +66,8 @@ Please identify the button contacts/returns by continuity to the actual switches
 before soldering. For the plug-in option, also verify the connector fit. The
 reported J2G2 pin numbers and candidate JST parts are still unverified; do not fabricate from those assumptions alone.
 Test that the original controls still work and that a short relay closure
-operates POWER without triggering EJECT. If EJECT is included, verify it
-independently and confirm neither remote input triggers the other button.
+operates POWER without triggering EJECT. Verify EJECT independently and confirm
+neither remote input triggers the other button.
 
 Only the relay's switch contacts connect to this harness. Do not connect ESP
 GPIO, control-side ground or 5 V directly to the Xbox button wires.
@@ -82,8 +78,10 @@ GPIO, control-side ground or 5 V directly to the Xbox button wires.
 
 EJECT needs its own relay channel and ESP output; never join POWER and EJECT
 together. GPIO46 (POWER) and GPIO47 (EJECT) are candidates pending the final pin
-audit and firmware support. EJECT is a separate manual control, not part of
-automatic freeze recovery; eject-start can select a different Stellar boot mode.
+audit and firmware support. Codex must be able to request PRESS POWER or PRESS EJECT, including startup
+with either button. EJECT is deliberately agent-commanded, not physical-only.
+Default freeze recovery uses POWER; eject-start can select a different Stellar
+boot mode. Both need fresh state checks and separate firmware/API support.
 
 The ESP controls the relay; a separate smart plug cycles Xbox AC. Those parts
 are outside this adapter request. See the **[full setup plan and photo wiring
