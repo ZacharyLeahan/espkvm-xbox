@@ -19,10 +19,13 @@ a hard power cycle.
 
 ## Current design and diagram
 
-![Dedicated relay and plug-in Xbox button adapter](roadmap-assets/xbox-power-relay-setup.png)
+The [current two-channel wiring plan](XBOX-POWER-RELAY-SETUP.md) supports Codex
+commands to press either POWER or EJECT, including deliberate startup with either.
 
-The permanent design is **one AC switch, one dedicated isolated relay and one
-reversible passive Xbox front-button interposer**. The external servo and shared
+![Current POWER and EJECT photo wiring diagram](roadmap-assets/xbox-power-relay-setup.png)
+
+The permanent design is **one AC switch, two independent isolated relays and
+professionally installed POWER/EJECT connections (plug-in or soldered)**. The external servo and shared
 servo/relay port are retired from the permanent plan.
 
 - [Current photo diagram, wiring notes and parts](XBOX-POWER-RELAY-SETUP.md).
@@ -35,10 +38,10 @@ servo/relay port are retired from the permanent plan.
 | Area | Proposed decision | Remaining gate |
 | --- | --- | --- |
 | Xbox | Owner-reported revision 1.4, existing Stellar retained | Verify actual front-button connector and POWER continuity |
-| Button actuation | Adafruit #4409 non-latching dry-contact relay | Boot/reset, release, separate-supply sequencing and low-current contact tests |
-| Xbox connection | Technician-built passive inline adapter, original circuits preserved; POWER/return tap only | Confirm connector family, mirrored mating views and fit before fabrication |
-| Remote disconnect | Adafruit #2880 keyed two-wire pair | Final cable mapping, secure contact termination, case exit route |
-| ESP control | GPIO46 / J1-36 and GND / J1-39; builder-adapted #3894 cable | Verify live pin claims, physical board identity and startup state |
+| Button actuation | Two Adafruit #4409 non-latching dry-contact relays | Boot/reset, release, separate-supply sequencing and low-current contact tests |
+| Xbox connection | Passive inline adapter or insulated soldered leads; separate POWER/EJECT contacts | Confirm connector family, mirrored mating views and fit before fabrication |
+| Remote disconnect | Two Adafruit #2880 keyed two-wire pairs, labeled by button | Final cable mapping, secure contact termination, case exit route |
+| ESP control | GPIO46 / J1-36 POWER, GPIO47 / J1-37 EJECT, GND / J1-39; two #3894 cables | Verify live pin claims, physical board identity and startup state |
 | Relay power | Independent regulated 5 V, #276/#368 proposed | Availability, polarity, secure ground branch and backfeed test |
 | Xbox AC | Shelly Plug US Gen4 S4PL-00116US; Xbox cord only | Confirm actual firmware/control and mains/load suitability |
 | Initial power-state evidence | Calibrated Shelly off/on bands, ambiguous/stale = UNKNOWN | Prove separation and fresh downstream AC evidence; add sensor if inadequate |
@@ -48,23 +51,22 @@ Working audio GPIO22/53/27 and its existing ground remain installed. Capture,
 DSI/touch, SD, Ethernet, Wi-Fi fallback and debugging must remain functional.
 The current pins look clear in the audited build, not yet verified live.
 
-## Optional manual EJECT control
+## Both buttons are in scope
 
-Request an independently wired EJECT contact as well if practical. This requires
-a second isolated relay channel, a validated spare ESP output (GPIO47 proposed)
-and separate firmware commands. Preserve factory controls, verify the shared
-Xbox return if used, and keep EJECT outside automatic hard-freeze recovery.
-The current photo diagram depicts the POWER-only baseline.
+Build independent POWER and EJECT channels. EJECT is an explicit agent-commanded short press,
+kept outside automatic hard-freeze recovery. Verify both GPIOs, use separate
+relay contacts, preserve factory controls and test each button independently.
+Firmware must add EJECT semantics rather than assuming the existing PC RESET
+command is suitable; serialize both channels and qualify safe release on both.
 
 ## Xbox adapter commissioning
 
 Send the standalone build brief for a quote. The technician must verify the
 reported J2G2 POWER/ground circuits and candidate JST PHD connector fit; the
-research is not a released fabrication pinout. Require a reversible plug-only
-installation, both disconnect halves, labeled relay lead, insulation/mounting,
+research is not a released fabrication pinout. Accept a plug-in adapter or professionally soldered, strain-relieved leads.
+Require both disconnect halves, labeled POWER/EJECT leads, insulation/mounting,
 continuity sheet and revision-appropriate installation photos. No owner soldering
-or original-wire cutting is intended. No builder has been contacted or agreed
-to make the kit yet.
+or original-wire cutting is intended. Inquiries have been sent to two Etsy builders; no build agreement is recorded.
 
 ## Implementation and acceptance sequence
 
@@ -95,8 +97,8 @@ not the purchasing or installation plan for the dedicated relay setup.
 
 ## Accepted alternative: professional soldered installation
 
-The owner also accepts professionally soldered leads across verified POWER and,
-if practical, EJECT switch contacts, preferably on the front button board. Use
+The owner also accepts professionally soldered leads across verified POWER and
+EJECT switch contacts, preferably on the front button board. Use
 insulated joints, strain relief and a keyed disconnect; preserve factory controls.
 This can replace the custom plug-in interposer shown in the diagram. Removing
 soldered leads requires desoldering. The relay isolation and separate control

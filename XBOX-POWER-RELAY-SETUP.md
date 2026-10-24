@@ -1,110 +1,84 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-# Current proposed setup: dedicated Xbox power-button relay
+# Proposed setup: agent-commanded Xbox POWER and EJECT
 
-Updated 2026-10-24. This supersedes the interchangeable servo/relay concept as
-the proposed permanent installation. No servo or universal accessory connector
-is included. No hardware purchases, firmware changes, or live actions are made
-by this documentation task.
+Both buttons are in scope. Codex can command the ESP to **press POWER** or
+**press EJECT**, including deliberately starting the Xbox with either button.
+"Agent-commanded" does not mean someone must physically press the console.
+Firmware/API support is planned, not implemented or validated by this document.
 
-![Dedicated relay setup with real product photos and numbered connections](roadmap-assets/xbox-power-relay-setup.png)
+![Two-channel POWER and EJECT wiring with real product photos](roadmap-assets/xbox-power-relay-setup.png)
 
-## Optional EJECT control
+## Connections and quantities
 
-If practical, ask the adapter builder to expose EJECT as well as POWER, with a
-separate labeled contact pair (or a verified shared Xbox return). This extends
-the single-POWER diagram above: EJECT needs a second independent isolated relay
-channel and ESP output. GPIO47 / J1-37 is a candidate pending final pin validation
-and firmware support. The original buttons and LEDs must keep working. Keep
-EJECT manual and outside automatic freeze recovery; Stellar eject-start behavior
-must be tested. See the [updated build request](XBOX-POWER-ADAPTER-BUILD-BRIEF.md).
+| Connection | Planned wiring |
+| --- | --- |
+| POWER control | ESP J1-36 / GPIO46 -> white SIG on POWER relay cable |
+| EJECT control | ESP J1-37 / GPIO47 -> white SIG on EJECT relay cable |
+| Control ground | ESP J1-39 -> both black relay wires and external supply negative |
+| Relay power | One independent regulated 5 V supply -> both red V+ wires |
+| POWER contacts | POWER relay NO/COM -> verified Xbox POWER signal/return |
+| EJECT contacts | EJECT relay NO/COM -> verified Xbox EJECT signal/return |
 
-## Follow the numbered connections
+Use **two #4409 relay boards, two #3894 control cables and two #2880 disconnect
+pairs**. Label identical connectors POWER/EJECT. The builder makes insulated,
+strain-relieved power/ground junctions; do not stack loose sockets on one pin.
+The ESP end uses push-on female sockets. Existing audio GPIO22/53/27 stays wired.
+The proposed GPIOs and header positions require final board/live pin verification.
 
-1. **ESP header:** female sockets on J1 physical pin 36 (GPIO46) and J1 physical
-   pin 39 (GND). This leaves the existing audio wiring in place. Confirm physical
-   identity and effective pin claims before installing; the board render is not
-   an exact pin-location annotation.
-2. **Dedicated cable:** Adafruit #3894 PH-to-female-socket cable. White/control
-   goes to GPIO46; black goes to ESP ground and external supply negative. Its
-   red lead goes to the independent 5 V supply, never ESP 3V3/5 V. A builder
-   assembles and insulates the power/ground branch; three stock female sockets
-   do not all plug into the ESP.
-3. **Relay:** the PH end of that cable plugs into Adafruit #4409. Its driver
-   activates an isolated normally-open switch. NO and COM are the only contact
-   terminals connected toward the Xbox; NC stays unused. An actual hardware
-   release bound and safe boot behavior remain to be qualified.
-4. **Relay power:** proposed Adafruit #276 regulated 5 V/2 A adapter into #368
-   barrel-to-terminal adapter, then into the red/black cable circuits. A securely
-   assembled junction connects the external supply negative to ESP/control
-   ground. Check supply availability and polarity before purchase; no current
-   stock claim is made. Do not add a positive connection to the ESP supply.
-5. **Contact disconnect:** proposed Adafruit #2880 two-pin JST-SM cable pair.
-   Builder terminates one side at NO/COM and the other at the Xbox interposer's
-   verified power-button signal and return. Wire colors are not authoritative.
-   Secure contact leads to prevent cable strain and verify terminal acceptance
-   of the chosen conductor size/ferrules; do not assume all loose leads fit.
-6. **Xbox plug-in adapter:** with AC removed, unplug the stock front-button
-   cable, insert the tested new adapter into the motherboard connection, and
-   plug the original cable into the adapter. The builder passes all original
-   circuits through unchanged and taps only the POWER switch circuit in parallel.
-   The owner should not cut or solder original Xbox wiring. Builder assembly
-   and testing are still necessary; this is not an available finished kit.
-7. **AC path:** wall outlet to Shelly Plug US Gen4 S4PL-00116US to Xbox AC cord.
-   KVM, relay supply and network equipment stay on unswitched power. The purpose
-   is a hard power cycle after a genuine hard freeze, followed by a short button
-   press only if fresh evidence says the Xbox remains off after AC restoration.
+Only relay NO/COM contacts go to the Xbox; leave NC unused. Do not add a direct
+Xbox-button connection to ESP GPIO, control ground or 5 V. Existing HDMI/USB
+may already join system grounds elsewhere; this is not whole-rig isolation.
+The relay supply stays independent of switched Xbox AC. Verify supply polarity,
+current headroom with both channels active, reset behavior and backfeed.
 
-## Xbox adapter build brief
+## Xbox installation: either approach is acceptable
 
-Send [XBOX-POWER-ADAPTER-BUILD-BRIEF.md](XBOX-POWER-ADAPTER-BUILD-BRIEF.md) to a
-technician for a quote. It is a short illustrated request covering the plug-in
-adapter, two-wire relay lead and basic verification. Supporting technical notes
-are linked separately. The brief covers the Xbox side; ESP firmware
-and AC automation remain separate work.
+- **Plug-in:** pass all original front-panel circuits through an inline adapter,
+  and tap POWER/EJECT separately in parallel with their physical switches.
+- **Professionally soldered:** attach leads across verified POWER/EJECT contacts,
+  preferably on the front button board; insulate joints, add strain relief and
+  route to keyed disconnects. Removal requires desoldering.
 
-## Xbox connection remains an installation gate
+Both preserve factory buttons and LEDs. The [short installer build request](XBOX-POWER-ADAPTER-BUILD-BRIEF.md)
+includes the [historical Xecuter adapter reference](https://connortumbleson.com/uploads/2024/03/x3_ce_v10_v16.pdf#page=12).
+Its photo shows topology, not a verified new harness or solder map. The reported
+J2G2 pinout and candidate JST family still require physical fit, orientation and
+continuity checks. Verify each button independently; never join their signals.
 
-The historical X3 adapter photo demonstrates the inline arrangement; it is not
-a photo of our unbuilt passive harness. Its small red lead was intended for an
-X3, not automatically compatible with our proposed relay cable.
+## Agent commands and freeze recovery
 
-The supplied research identifies **J2G2 circuit 1 as ground and circuit 2 as
-POWER_SW**, with JST PHD components as candidate mating parts. Those claims
-remain provisional in this repository until a builder verifies the actual
-connector family, orientation and continuity against the physical POWER switch.
-No exact solder-pad or header-corner instruction is provided by this diagram.
+The planned API must expose separate bounded **PRESS POWER** and **PRESS EJECT**
+operations, usable by Codex. These emulate buttons, not "set console ON" commands:
+check fresh state first, because pressing an already-on console can have another
+effect. Eject-start may select a different Stellar boot mode; qualify both paths.
 
-Do not add a new Xbox-ground-to-ESP-ground wire. The relay contact pair stays
-separate from the control supply/ground. Existing HDMI/USB may already join
-system grounds elsewhere; this does not claim complete rig galvanic isolation.
+The default automatic hard-freeze sequence uses Shelly explicit OFF/ON, confirmed
+restoration and fresh power evidence, then one POWER pulse only if still off.
+EJECT remains available for deliberate agent requests; exclude it from that
+default sequence. Never blindly replay either button after a timeout.
 
-## Power state and firmware
+Firmware must validate both pins, idle both outputs safely, bound release,
+serialize button operations, deduplicate requests and report accepted versus
+completed status. Add explicit EJECT semantics rather than assuming PC RESET or
+long-hold behavior. Reconcile state after restarts. Hardware release guarantees
+and stuck-active behavior still need qualification.
 
-Initially evaluate Shelly load measurements as a possible main-power indicator;
-use them only if calibrated standby and running bands are clearly separated.
-Stale or ambiguous readings mean UNKNOWN and must inhibit a button press.
-Plug output=ON alone is not proof of downstream AC. Confirm restore using
-appropriate fresh corroborating evidence. GPIO48 remains reserved for an
-optional isolated sensor if needed; its circuit is not shown here.
+Calibrate Shelly standby/running bands before using watts as power evidence;
+stale or ambiguous means UNKNOWN and inhibits a recovery press. Plug output ON
+alone does not prove downstream AC. Reserve GPIO48 for isolated rail sensing if
+needed. Require a fresh boot progression and useful response to verify liveness;
+watts, LEDs, HDMI lock or ping alone are insufficient.
 
-Neither watts, a relay pulse, HDMI lock nor a single frame proves application
-liveness. Require a fresh post-cycle boot sequence and useful response to input,
-or stronger application instrumentation, before declaring recovery successful.
-
-The existing ATX worker still needs the focused reliability work documented in
-[the investigation](docs/XBOX-POWER-CONTROL.md): optional reset,
-initialization and bounded release, duplicate admission, busy/completed status,
-fresh sensing/evidence, and reconciliation after timeouts/restarts. Never blindly
-retry a power-button event or assume PC long-hold behavior applies to Xbox.
+[Detailed investigation and implementation plan](docs/XBOX-POWER-CONTROL.md).
 
 ## Parts and photo sources
 
 | Item | Exact proposed product / source |
 | --- | --- |
 | ESP board | Existing P4X; [local reference render](docs/esp32-p4x-function-ev-board-isometric_v1.6.png) |
-| Control cable | [Adafruit #3894](https://www.adafruit.com/product/3894) |
-| Relay | [Adafruit #4409](https://www.adafruit.com/product/4409) |
-| Contact disconnect | [Adafruit #2880](https://www.adafruit.com/product/2880) |
+| Control cables (2) | [Adafruit #3894](https://www.adafruit.com/product/3894) |
+| Relays (2) | [Adafruit #4409](https://www.adafruit.com/product/4409) |
+| Contact disconnects (2 pairs) | [Adafruit #2880](https://www.adafruit.com/product/2880) |
 | External supply | [Adafruit #276](https://www.adafruit.com/product/276), proposed pending availability |
 | DC jack termination | [Adafruit #368](https://www.adafruit.com/product/368) |
 | AC switch | [Shelly Plug US Gen4](https://us.shelly.com/products/shelly-plug-us-gen4-white), S4PL-00116US |
@@ -120,12 +94,3 @@ Original product-image URLs are recorded in
 [Diagram layout source](roadmap-assets/draw_xbox_relay_setup.py) ·
 [Roadmap](XBOX-POWER-ROADMAP.md) ·
 [Previous interchangeable concept, historical](XBOX-POWER-PARTS.md)
-
-## Accepted alternative: professional soldered installation
-
-The owner also accepts professionally soldered leads across verified POWER and,
-if practical, EJECT switch contacts, preferably on the front button board. Use
-insulated joints, strain relief and a keyed disconnect; preserve factory controls.
-This can replace the custom plug-in interposer shown in the diagram. Removing
-soldered leads requires desoldering. The relay isolation and separate control
-channels remain the same. See the [build request](XBOX-POWER-ADAPTER-BUILD-BRIEF.md).

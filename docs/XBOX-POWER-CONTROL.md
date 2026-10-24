@@ -1,6 +1,12 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Original Xbox power recovery investigation
 
+Current build scope: both POWER and EJECT, using independent isolated relay
+channels. Plug-in or professionally soldered, strain-relieved button leads are
+accepted. See the [current build brief](../XBOX-POWER-ADAPTER-BUILD-BRIEF.md) and
+[two-channel wiring plan](../XBOX-POWER-RELAY-SETUP.md). The investigation below
+retains the earlier POWER-only baseline; EJECT is available to Codex by explicit command, outside default recovery.
+
 Investigated 2026-10-20 against source commit
 `61f43235c024d9738d9a37342d334512dc74a82c`.
 Documentation and proposed design only. No firmware, saved settings, hardware,
