@@ -8,6 +8,16 @@ by this documentation task.
 
 ![Dedicated relay setup with real product photos and numbered connections](roadmap-assets/xbox-power-relay-setup.png)
 
+## Optional EJECT control
+
+If practical, ask the adapter builder to expose EJECT as well as POWER, with a
+separate labeled contact pair (or a verified shared Xbox return). This extends
+the single-POWER diagram above: EJECT needs a second independent isolated relay
+channel and ESP output. GPIO47 / J1-37 is a candidate pending final pin validation
+and firmware support. The original buttons and LEDs must keep working. Keep
+EJECT manual and outside automatic freeze recovery; Stellar eject-start behavior
+must be tested. See the [updated build request](XBOX-POWER-ADAPTER-BUILD-BRIEF.md).
+
 ## Follow the numbered connections
 
 1. **ESP header:** female sockets on J1 physical pin 36 (GPIO46) and J1 physical
@@ -110,3 +120,12 @@ Original product-image URLs are recorded in
 [Diagram layout source](roadmap-assets/draw_xbox_relay_setup.py) ·
 [Roadmap](XBOX-POWER-ROADMAP.md) ·
 [Previous interchangeable concept, historical](XBOX-POWER-PARTS.md)
+
+## Accepted alternative: professional soldered installation
+
+The owner also accepts professionally soldered leads across verified POWER and,
+if practical, EJECT switch contacts, preferably on the front button board. Use
+insulated joints, strain relief and a keyed disconnect; preserve factory controls.
+This can replace the custom plug-in interposer shown in the diagram. Removing
+soldered leads requires desoldering. The relay isolation and separate control
+channels remain the same. See the [build request](XBOX-POWER-ADAPTER-BUILD-BRIEF.md).
