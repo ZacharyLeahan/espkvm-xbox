@@ -1,6 +1,16 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Adapter technical notes: preliminary verification checklist
 
+Scope update: professionally soldered, insulated button leads with strain relief
+and a keyed disconnect are also accepted in place of the passive interposer.
+Verify the actual switch contacts and preserve factory operation. The original
+plug-only restrictions below apply only to the interposer option.
+
+Scope update: the [short build request](XBOX-POWER-ADAPTER-BUILD-BRIEF.md) now
+asks for optional independent EJECT control. POWER-only restrictions below describe
+the original baseline; an agreed EJECT extension needs its own verified contact
+path and relay channel, with the same isolation and pass-through requirements.
+
 Revision 1 - 2026-10-24. Request for a quote, connector verification, fabrication
 and testing. This is a functional specification, **not a verified production
 pinout**. Please close the verification items below before building the final

@@ -48,6 +48,14 @@ Working audio GPIO22/53/27 and its existing ground remain installed. Capture,
 DSI/touch, SD, Ethernet, Wi-Fi fallback and debugging must remain functional.
 The current pins look clear in the audited build, not yet verified live.
 
+## Optional manual EJECT control
+
+Request an independently wired EJECT contact as well if practical. This requires
+a second isolated relay channel, a validated spare ESP output (GPIO47 proposed)
+and separate firmware commands. Preserve factory controls, verify the shared
+Xbox return if used, and keep EJECT outside automatic hard-freeze recovery.
+The current photo diagram depicts the POWER-only baseline.
+
 ## Xbox adapter commissioning
 
 Send the standalone build brief for a quote. The technician must verify the
@@ -84,3 +92,12 @@ Power draw, front LED state, HDMI lock and ping alone do not prove boot/liveness
 [Earlier interchangeable-accessory roadmap](XBOX-POWER-ROADMAP-HISTORY.md) and
 [its photographed parts study](XBOX-POWER-PARTS.md) remain as history. They are
 not the purchasing or installation plan for the dedicated relay setup.
+
+## Accepted alternative: professional soldered installation
+
+The owner also accepts professionally soldered leads across verified POWER and,
+if practical, EJECT switch contacts, preferably on the front button board. Use
+insulated joints, strain relief and a keyed disconnect; preserve factory controls.
+This can replace the custom plug-in interposer shown in the diagram. Removing
+soldered leads requires desoldering. The relay isolation and separate control
+channels remain the same. See the [build request](XBOX-POWER-ADAPTER-BUILD-BRIEF.md).
