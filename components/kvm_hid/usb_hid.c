@@ -2,8 +2,12 @@
  * SPDX-FileCopyrightText: 2026 ESP-KVM contributors
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "sdkconfig.h"
 #include "usb_hid.h"
 #include "usb_xbox.h"
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+#include "xbox_s3_route.h"
+#endif
 
 #include <string.h>
 
@@ -1126,12 +1130,20 @@ bool usb_hid_ready(void)
      * the flag stayed false while the device was plainly mounted - so input kept
      * working (the worker only checks tud_mounted()) but the status indicator and
      * the REST "no USB target" checks wrongly reported no target until a replug. */
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+    return xbox_s3_route_ready();
+#else
     return tud_mounted();
+#endif
 }
 
 bool usb_hid_target_suspended(void)
 {
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+    return false;
+#else
     return tud_suspended();
+#endif
 }
 
 bool usb_hid_bus_alive(void)
@@ -1144,7 +1156,11 @@ bool usb_hid_bus_alive(void)
      * target's port, the other is a replug. TinyUSB tracks it as `connected`,
      * set when the device controller sees the bus and cleared on unplug.
      */
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+    return xbox_s3_route_alive();
+#else
     return tud_connected();
+#endif
 }
 
 uint8_t usb_hid_leds(void)

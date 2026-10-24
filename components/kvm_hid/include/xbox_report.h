@@ -1,7 +1,11 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 #pragma once
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
+/* Reject output reports and reserved digital bits before remote input queues. */
+static inline bool xbox_report_valid(const uint8_t report[20])
+{ return report && report[0]==0 && report[1]==20 && report[3]==0; }
 static inline void xbox_report_axes(uint8_t out[20], const int16_t axes[4])
 {
     for (unsigned i=0;i<4;i++) {

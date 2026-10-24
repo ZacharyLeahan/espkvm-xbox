@@ -109,7 +109,9 @@ docs/             HARDWARE-NOTES.md (measured facts), PORTING.md
 - **esp_tinyusb is vendored** at `components/esp_tinyusb`, not pulled from the
   registry. It is a fork with its storage-backed MSC removed so ESP-KVM can
   supply its own `tud_msc_*_cb` serving a file; `CFG_TUD_MSC` is forced on in
-  its `tusb_config.h`. Do not re-add the managed `espressif/esp_tinyusb`
+  its `tusb_config.h` by default (`TINYUSB_KVM_MSC_CLASS`). The standalone
+  `s3-dongle/` reuses this wrapper through a thin component shim and disables
+  that class because it has no storage callbacks. Do not re-add the managed `espressif/esp_tinyusb`
   dependency, and do not expect its MSC storage APIs to exist.
 - **One WireGuard stack for both VPNs.** esp_wireguard is gone; both the classic
   WireGuard client (`kvm_net/kvm_wg.c`) and native Tailscale (`kvm_net/kvm_ts.c`)

@@ -11,3 +11,6 @@ void usb_xbox_release(void);
 void usb_xbox_bluetooth(const uint8_t report[20]);
 /* Snapshot reports submitted to USB after local/BLE/network arbitration. */
 void usb_xbox_history(char held[48],char lines[3][48],char timing[48]);
+
+/* Full-resolution remote state; same priority and expiry as keyboard input. */
+void usb_xbox_remote_report(const uint8_t report[20]);

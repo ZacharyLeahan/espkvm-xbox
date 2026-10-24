@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+menu "Xbox S3 home network"
+    config KVM_WIFI_DEFAULT_SSID
+        string "Home Wi-Fi SSID"
+        default ""
+    config KVM_WIFI_DEFAULT_PASSWORD
+        string "Home Wi-Fi password"
+        default ""
+    config KVM_XBOX_S3_KEY
+        string "Private 64-character hexadecimal P4 pairing key"
+        default ""
+endmenu

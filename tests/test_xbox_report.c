@@ -6,6 +6,13 @@
 int main(void)
 {
     uint8_t keys[6] = {0}, report[20];
+    uint8_t valid[20]={0,20};
+    assert(xbox_report_valid(valid));
+    assert(!xbox_report_valid(NULL));
+    valid[0]=1;assert(!xbox_report_valid(valid));valid[0]=0;
+    valid[1]=6;assert(!xbox_report_valid(valid));valid[1]=20;
+    valid[3]=1;assert(!xbox_report_valid(valid));valid[3]=0;
+    valid[4]=127;valid[10]=64;assert(xbox_report_valid(valid));
     xbox_keyboard_report(keys, report);
     for (unsigned i = 0; i < 20; ++i) assert(report[i] == (i == 1 ? 20 : 0));
     const uint8_t buttons[] = {0x52,0x51,0x50,0x4f,0x28,0x2a,0x15,0x17};

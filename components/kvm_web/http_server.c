@@ -7,6 +7,9 @@
 #include "http_server.h"
 
 #include "sdkconfig.h" /* the CONFIG_ guards below are read before any of them */
+#if CONFIG_KVM_USB_XBOX
+#include "usb_xbox.h"
+#endif
 
 #include <ctype.h>
 #include <dirent.h>
@@ -2595,6 +2598,7 @@ enum {
     WS_C2D_RELEASE_ALL = 0x05,
     WS_C2D_PING = 0x06,
     WS_C2D_TAKEOVER = 0x07,
+    WS_C2D_XBOX_REPORT = 0x08, /* 20-byte original-Xbox XID input state */
 
     WS_D2C_STATUS = 0x81,
     WS_D2C_PONG = 0x82,
@@ -3281,7 +3285,11 @@ static esp_err_t ws_input_handler(httpd_req_t *req)
     const int my_fd = httpd_req_to_sockfd(req);
     ctrl_client_add(my_fd);
     const uint8_t op = pkt.len ? buf[0] : 0;
-    const bool is_input = op >= WS_C2D_MOUSE_ABS && op <= WS_C2D_RELEASE_ALL;
+    const bool is_input = (op >= WS_C2D_MOUSE_ABS && op <= WS_C2D_RELEASE_ALL)
+#if CONFIG_KVM_USB_XBOX
+        || op == WS_C2D_XBOX_REPORT
+#endif
+        ;
 
     /*
      * One controlling client at a time, held first-come rather than last-write:
@@ -3365,6 +3373,11 @@ static esp_err_t ws_input_handler(httpd_req_t *req)
             usb_hid_keyboard(buf[1], &buf[2]);
         }
         break;
+#if CONFIG_KVM_USB_XBOX
+    case WS_C2D_XBOX_REPORT:
+        if(pkt.len==21)usb_xbox_remote_report(&buf[1]);
+        break;
+#endif
     case WS_C2D_CONSUMER:
         if (pkt.len >= 3) {
             usb_hid_consumer((uint16_t)buf[1] | ((uint16_t)buf[2] << 8));

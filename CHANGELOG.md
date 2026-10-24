@@ -7,6 +7,16 @@ bumps the patch).
 
 ## [Unreleased]
 
+### Added
+
+- Add a standalone ESP32-S3-Zero original-Xbox XID test dongle with a WPA2
+  access point, browser controls, raw report endpoint, and stale-input release.
+  Add opt-in player-1 routing from the P4 using home Wi-Fi, authenticated
+  discovery/state packets, replay checks, and independent input expiry.
+  Add full-resolution Xbox state on control WebSocket opcode 0x08 and record
+  a verified 164-state real-console sweep. Fix S3 receiver scheduling so USB
+  service is not starved. Four-player operation remains pending.
+
 ### Diagnostics
 
 - Correlate optional TCP stall snapshots with C6 receive counters, valid ACKs

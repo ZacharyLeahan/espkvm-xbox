@@ -56,11 +56,14 @@ if(${target} STREQUAL "esp32p4")
     endif()
 endif() # esp32p4
 
+# Also used by the standalone S3 component shim; keep one vendored source copy.
+set(_kvm_tinyusb_dir "${CMAKE_CURRENT_LIST_DIR}")
+list(TRANSFORM srcs PREPEND "${_kvm_tinyusb_dir}/")
 idf_component_register(SRCS ${srcs}
-                       INCLUDE_DIRS "include"
-                       PRIV_INCLUDE_DIRS "include_private"
+                       INCLUDE_DIRS "${_kvm_tinyusb_dir}/include"
+                       PRIV_INCLUDE_DIRS "${_kvm_tinyusb_dir}/include_private"
                        PRIV_REQUIRES ${priv_req}
-                       REQUIRES fatfs vfs
+                       REQUIRES fatfs vfs ${KVM_TINYUSB_EXTRA_REQUIRES}
                        )
 
 # Determine whether tinyusb is fetched from component registry or from local path
@@ -73,4 +76,4 @@ endif()
 
 # Pass tusb_config.h from this component to TinyUSB
 idf_component_get_property(tusb_lib ${tinyusb_name} COMPONENT_LIB)
-target_include_directories(${tusb_lib} PRIVATE "include")
+target_include_directories(${tusb_lib} PRIVATE "${_kvm_tinyusb_dir}/include")
