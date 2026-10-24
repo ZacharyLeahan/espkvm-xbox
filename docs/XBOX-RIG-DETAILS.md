@@ -17,7 +17,7 @@ Audio is working, but brief gaps remain possible. Subjective sound quality, audi
 
 Connecting a remote video viewer reduces the LCD to at most 1 FPS; disconnecting restores local preview. Long sessions, repeated HDMI mode changes, remote Tailscale performance, and simultaneous 720p recording/preview need more validation. Bluetooth bonds do not survive an ESP reboot, reconnection needs reliability testing, and rumble is not forwarded.
 
-Automated deployment/launch, reliable recovery from console hangs, named input macros, and an autonomous test runner remain future work. The current tools complement emulator/debugger workflows with real-console evidence.
+Automated deployment/launch, reliable recovery from console hangs, named input macros, and an autonomous test runner remain future work. The [power-recovery roadmap](../XBOX-POWER-ROADMAP.md), [short adapter build request](../XBOX-POWER-ADAPTER-BUILD-BRIEF.md), [Xbox power-control investigation](XBOX-POWER-CONTROL.md) and [installer worksheet](XBOX-POWER-INSTALL.md) document the proposed isolated button/rail interface and remaining acceptance gates. The current tools complement emulator/debugger workflows with real-console evidence.
 
 [Audio measurements and configuration](HDMI-AUDIO.md) · [Video investigation](XBOX-CAPTURE-DEBUG.md) · [Historical tests and hardware costs](FORK-HISTORY.md)
 

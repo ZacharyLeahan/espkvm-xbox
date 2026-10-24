@@ -1,0 +1,47 @@
+[
+  {
+    "id": 4326,
+    "page": "https://www.adafruit.com/product/4326",
+    "photo": "https://www.adafruit.com/images/480x360/4326-00.jpg"
+  },
+  {
+    "id": 4409,
+    "page": "https://www.adafruit.com/product/4409",
+    "photo": "https://cdn-shop.adafruit.com/970x728/4409-06.jpg"
+  },
+  {
+    "id": 3894,
+    "page": "https://www.adafruit.com/product/3894",
+    "photo": "https://www.adafruit.com/images/480x360/3894-03.jpg"
+  },
+  {
+    "id": 4046,
+    "page": "https://www.adafruit.com/product/4046",
+    "photo": "https://www.adafruit.com/images/480x360/4046-02.jpg"
+  },
+  {
+    "id": 276,
+    "page": "https://www.adafruit.com/product/276",
+    "photo": "https://www.adafruit.com/images/480x360/276-06.jpg"
+  },
+  {
+    "id": 368,
+    "page": "https://www.adafruit.com/product/368",
+    "photo": "https://www.adafruit.com/images/480x360/368-03.jpg"
+  },
+  {
+    "id": 4336,
+    "page": "https://www.adafruit.com/product/4336",
+    "photo": "https://www.adafruit.com/images/480x360/4336-01.jpg"
+  },
+  {
+    "name": "adafruit-2880",
+    "page": "https://www.adafruit.com/product/2880",
+    "photo": "https://www.adafruit.com/images/480x360/2880-11.jpg"
+  },
+  {
+    "name": "shelly-us-gen4",
+    "page": "https://us.shelly.com/products/shelly-plug-us-gen4-white",
+    "photo": "https://us.shelly.com/cdn/shop/files/Plug_Gen4_side.png?v=1779786034"
+  }
+]
