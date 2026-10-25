@@ -348,3 +348,11 @@ The main P4 can output locally or use the paired S3 player-1 route without
 changing this input format. All 164 test states were verified on the actual
 Xbox, including intermediate pressures and circular stick motion; see
 [S3 player-1 validation](S3-PLAYER1-VALIDATION.md).
+
+
+## Per-player connection and activity indicators
+
+The web console and LCD stats view show P1-P4 connection indicators with
+per-player details. [Status meanings and WebSocket 0x85 contract](CONTROLLER-STATUS.md)
+separate signed discovery, input sent, receiver diagnostics and Xbox USB
+completion. A green indicator alone does not prove game response.

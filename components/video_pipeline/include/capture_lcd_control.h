@@ -30,3 +30,15 @@ void capture_lcd_bt_register(void (*mode)(bool), const char *(*status)(void),
 void capture_lcd_bt_state(capture_lcd_bt_state_t *out);
 void capture_lcd_bt_mode(bool pairing);
 const char *capture_lcd_bt_status(void);
+
+typedef struct {
+    bool enabled;
+    unsigned connection[4];
+    bool active[4],stale_beacon[4],consuming[4];
+    char ip[4][16],held[4][48];
+    int64_t beacon_age[4],diagnostic_age[4];
+    bool diagnostics[4];
+    uint32_t submitted[4],consumed[4];
+} capture_lcd_players_t;
+void capture_lcd_players_register(void (*get)(capture_lcd_players_t *));
+void capture_lcd_players_state(capture_lcd_players_t *out);

@@ -36,3 +36,8 @@ void capture_lcd_record_toggle(void)
 {
     if (s_toggle) s_toggle();
 }
+
+static void (*s_players_get)(capture_lcd_players_t *);
+void capture_lcd_players_register(void (*get)(capture_lcd_players_t *)) { s_players_get=get; }
+void capture_lcd_players_state(capture_lcd_players_t *out)
+{ memset(out,0,sizeof(*out));if(s_players_get)s_players_get(out); }

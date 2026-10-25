@@ -1,5 +1,5 @@
 idf_component_register(
-    SRCS "main.c" "lcd_record_control.c" "xbox_ble.c"
+    SRCS "main.c" "lcd_record_control.c" "lcd_controller_status.c" "xbox_ble.c"
     INCLUDE_DIRS "."
     REQUIRES
         video_pipeline

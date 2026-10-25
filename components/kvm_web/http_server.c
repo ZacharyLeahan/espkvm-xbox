@@ -9,6 +9,9 @@
 #include "sdkconfig.h" /* the CONFIG_ guards below are read before any of them */
 #if CONFIG_KVM_USB_XBOX
 #include "usb_xbox.h"
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+#include "xbox_controller_status.h"
+#endif
 #endif
 
 #include <ctype.h>
@@ -3097,6 +3100,43 @@ static void ws_broadcast_update(uint8_t phase, uint8_t percent)
 }
 
 /** Target-attached state and keyboard LEDs, to one console. */
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+static void ws_send_controllers_to(int fd)
+{
+    xbox_controller_status_t states[4];xbox_s3_route_status(states);
+    cJSON *list=cJSON_CreateArray();
+    if(!list)return;
+    int64_t now=esp_timer_get_time();
+    for(unsigned p=0;p<4;p++) {
+        const xbox_controller_status_t *s=&states[p];
+        cJSON *item=cJSON_CreateObject();if(!item) { cJSON_Delete(list);return; }
+        cJSON_AddNumberToObject(item,"player",p+1);
+        cJSON_AddBoolToObject(item,"configured",s->configured);
+        cJSON_AddBoolToObject(item,"seen",s->seen);
+        cJSON_AddNumberToObject(item,"connection",xbox_controller_connection(s,now));
+        cJSON_AddStringToObject(item,"ip",s->ip);
+        cJSON_AddStringToObject(item,"held",s->held);
+        cJSON_AddNumberToObject(item,"beaconAgeMs",xbox_controller_age(s->beacon_at,now));
+        cJSON_AddNumberToObject(item,"diagnosticAgeMs",xbox_controller_age(s->diagnostic_at,now));
+        cJSON_AddNumberToObject(item,"activityAgeMs",xbox_controller_age(s->activity_at,now));
+        cJSON_AddNumberToObject(item,"completionAgeMs",xbox_controller_age(s->completion_at,now));
+        cJSON_AddNumberToObject(item,"sent",s->sent);
+        cJSON_AddNumberToObject(item,"sendErrors",s->send_errors);
+        if(s->diagnostics) {
+            cJSON_AddNumberToObject(item,"submitted",s->submitted);
+            cJSON_AddNumberToObject(item,"consumed",s->consumed);
+        }
+        cJSON_AddItemToArray(list,item);
+    }
+    char *json=cJSON_PrintUnformatted(list);cJSON_Delete(list);
+    if(!json)return;
+    size_t length=strlen(json);
+    uint8_t *message=malloc(length+1);
+    if(message) { message[0]=0x85;memcpy(message+1,json,length);ws_send_binary(fd,message,length+1);free(message); }
+    free(json);
+}
+#endif
+
 static void ws_send_status_to(int fd)
 {
     if (fd < 0) {
@@ -3109,6 +3149,9 @@ static void ws_send_status_to(int fd)
     const uint8_t flags = (uint8_t)((usb_hid_ready() ? 1u : 0u) | (usb_hid_bus_alive() ? 2u : 0u));
     const uint8_t msg[] = {WS_D2C_STATUS, flags, usb_hid_leds()};
     ws_send_binary(fd, msg, sizeof(msg));
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+    ws_send_controllers_to(fd);
+#endif
 }
 
 /*

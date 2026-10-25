@@ -19,6 +19,7 @@
 #include "lcd_touch_toggle.h"
 #include "lcd_record_button.h"
 #include "lcd_controller.h"
+#include "lcd_players.h"
 #include "capture_lcd_control.h"
 #include "kvm_thermal.h"
 
@@ -93,6 +94,13 @@ static atomic_uint s_ui_mode = LCD_UI_STATS;
 static atomic_uint s_bar_margin = 16;
 static unsigned s_draw_mode = LCD_UI_STATS;
 static bool s_show_stats = true;
+static atomic_int s_player_selected = -1;
+static void draw_players(void)
+{
+    if(!s_show_stats)return;
+    capture_lcd_players_t players;capture_lcd_players_state(&players);
+    lcd_players_draw(s_fb,&players,atomic_load(&s_player_selected));
+}
 static i2c_master_dev_handle_t s_touch;
 static uint16_t s_touch_w = LCD_W, s_touch_h = LCD_H;
 static capture_lcd_record_state_t s_record;
@@ -173,7 +181,15 @@ static void touch_task(void *arg)
                         hit |= lcd_pad_hit(px*LCD_W/s_touch_w,py*LCD_H/s_touch_h,keys,axes);
                 }
 #endif
-                if (press && !hit && count==1 && mode==LCD_UI_BT && lcd_ui_bt_timing(x,y)) {
+                capture_lcd_players_t players;capture_lcd_players_state(&players);
+                int player_hit=lcd_players_hit(x,y);
+                if(press && !hit && count==1 && lcd_ui_stats(mode) && players.enabled && player_hit>=0) {
+                    atomic_store(&s_player_selected,atomic_load(&s_player_selected)==player_hit?-1:player_hit);
+                    menu_gesture=true;
+                } else if(press && !hit && count==1 && lcd_ui_stats(mode) && atomic_load(&s_player_selected)>=0 &&
+                          x>=32 && x<608 && y>=70 && y<240) {
+                    atomic_store(&s_player_selected,-1);menu_gesture=true;
+                } else if (press && !hit && count==1 && mode==LCD_UI_BT && lcd_ui_bt_timing(x,y)) {
 #if CONFIG_KVM_USB_XBOX
                     atomic_store(&s_bt_timing,!atomic_load(&s_bt_timing));
 #endif
@@ -294,9 +310,16 @@ void capture_dsi_preview_tick(uint32_t completed)
     }
     if (mode != s_draw_mode) {
         s_draw_mode = mode;
+        atomic_store(&s_player_selected,-1);
         s_show_stats = lcd_ui_stats(mode);
         /* Erase the previous glyphs in ALL ring buffers, including letterbox. */
         for (unsigned i = 0; i < LCD_BUFFERS; ++i) s_clear_buffer[i] = true;
+    }
+    static int last_selected=-1;
+    int selected=atomic_load(&s_player_selected);
+    if(selected!=last_selected) {
+        for(unsigned i=0;i<LCD_BUFFERS;i++)s_clear_buffer[i]=true;
+        last_selected=selected;
     }
     const int64_t now = esp_timer_get_time();
     if (completed != s_seen_completed) {
@@ -342,6 +365,7 @@ void capture_dsi_preview_tick(uint32_t completed)
         s_idle_us = now;
         memset(s_fb, 0, LCD_FB_BYTES);
         if (s_show_stats) lcd_status_strip(s_fb, LCD_W, LCD_H, s_strip);
+        draw_players();
         if (s_show_stats && s_record.available) lcd_record_button(s_fb, LCD_W, LCD_H,
             s_record.recording, s_record.busy, s_record.seconds);
 #if CONFIG_KVM_USB_XBOX
@@ -1082,6 +1106,7 @@ void capture_dsi_preview_frame(const void *src, uint32_t width, uint32_t height,
     }
 #if CONFIG_KVM_DSI_STATUS_STRIP
     if (s_show_stats) lcd_status_strip(s_fb, LCD_W, LCD_H, s_strip);
+    draw_players();
     if (s_show_stats && s_record.available) lcd_record_button(s_fb, LCD_W, LCD_H,
         s_record.recording, s_record.busy, s_record.seconds);
 #if CONFIG_KVM_USB_XBOX

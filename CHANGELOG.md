@@ -9,6 +9,11 @@ bumps the patch).
 
 ### Added
 
+- Add compact P1-P4 connection/activity indicators to the web console and LCD,
+  with click/tap details, stale-discovery warnings and timestamped receiver USB
+  completion counters sampled outside the input worker. Preserve older clients
+  and dongles through an additive control-WebSocket status message.
+
 - Extend S3 routing to four independently paired original-Xbox controller
   boards. Add player-addressed full-resolution WebSocket input while retaining
   the player-1 command, independent expiry, and release-all across all slots.
