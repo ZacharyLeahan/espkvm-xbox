@@ -120,7 +120,11 @@ static void stream_task(void *arg)
     const char *ended = "disabled_or_session";
     while (block && kvm_cap_active(KVM_CAP_AUDIO) && kvm_auth_session_ok(&ctx->session)) {
         esp_err_t error = kvm_audio_read(ctx->sub, block, 600);
-        if (error != ESP_OK) { ended = "capture_read"; break; }
+        if (error != ESP_OK) {
+            ESP_LOGW("audio_stream", "capture read: %s", esp_err_to_name(error));
+            ended = "capture_read";
+            break;
+        }
         // Recheck after waiting, before sending even the first PCM block.
         if (!kvm_cap_active(KVM_CAP_AUDIO) || !kvm_auth_session_ok(&ctx->session)) break;
         const int64_t now = esp_timer_get_time();
