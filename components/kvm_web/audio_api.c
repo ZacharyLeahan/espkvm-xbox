@@ -89,8 +89,10 @@ static void stream_task(void *arg)
              esp_err_to_name(radio_err), radio_err == ESP_OK ? (int)radio_ps : -1);
 #endif
     int nodelay = 1;
-    // Allow a brief network stall to recover without enlarging the PCM queue.
-    struct timeval timeout = {.tv_sec = 0, .tv_usec = 250000};
+    // The 250 ms deadline closed streams before TCP could retransmit missing
+    // data (measured recovery: 1.26 s). Keep the queue bounded and allow TCP
+    // to recover; the subscriber drops old capture blocks during the wait.
+    struct timeval timeout = {.tv_sec = 2, .tv_usec = 0};
     setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &nodelay, sizeof(nodelay));
     setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &timeout, sizeof(timeout));
     char headers[256];

@@ -175,7 +175,11 @@ Mbit/s before HTTP/TCP/TLS overhead). Browser playback stays PCM. MicroSD record
 buffers hold about 40 ms total; the worker reads roughly 5 ms at a time. At 48 kHz, each 960-byte PCM block
 fits one TCP packet. CPU-side working buffers live in PSRAM. A
 separate asynchronous HTTP task keeps audio reads out of the HTTP server loop.
-TCP_NODELAY avoids Nagle delay; sends have a 250 ms socket timeout. Plain HTTP
+TCP_NODELAY avoids Nagle delay; sends have a two-second socket timeout so TCP
+can retransmit missing data before the application closes the stream. A live
+trial recovered a 1.26-second write stall that exceeded the former 250 ms
+budget. This improves connection recovery, not lossless or gap-free playback.
+The browser subscriber queue remains 40 ms. Plain HTTP
 uses nonblocking attempts with a yield between retries to avoid lwIP blocking
 write timeout overshoot. This is a stall budget, not a fixed playback buffer;
 scheduling and lock contention can still extend elapsed time. A DMA
