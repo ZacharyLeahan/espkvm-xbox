@@ -44,6 +44,13 @@ Brief audio gaps remain possible, and audio/video synchronization and end-to-end
 latency are unverified. A remote video viewer reduces local LCD preview to at
 most 1 FPS. See [measurements and remaining limits](docs/XBOX-RIG-DETAILS.md).
 
+**Known issue: HDMI audio is unstable over Wi-Fi.** Fully wired Ethernet audio
+was stable in a three-minute stereo capture with no measured transport gaps,
+and browser playback was verified. Wi-Fi captures still lose audio: a recent
+30-second test delivered only 25 seconds of samples. Use Ethernet on both the
+KVM and viewing computer for reliable audio on the tested rig. The wireless
+cause remains unresolved; see [hardware test results](docs/C790-TRANSPORT-2026-10-25.md).
+
 ## Hardware
 
 The tested rig uses an **ESP32-P4 Function EV** (rev 3.2, C6 Wi-Fi),
