@@ -24,6 +24,11 @@
 
 static const char *TAG = "usb_xbox";
 static QueueHandle_t s_queue;
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+static QueueHandle_t s_player_queues[3];
+static uint8_t s_player_states[4][20]={{0,20},{0,20},{0,20},{0,20}};
+static int64_t s_player_deadlines[3];
+#endif
 static SemaphoreHandle_t s_input_mu;
 static int64_t s_local_until;
 static int64_t s_bluetooth_until;
@@ -82,6 +87,14 @@ void usb_xbox_release(void)
 {
     if (!s_input_mu || xSemaphoreTake(s_input_mu,pdMS_TO_TICKS(10)) != pdTRUE) return;
     if (esp_timer_get_time() >= s_local_until && esp_timer_get_time() >= s_bluetooth_until) queue_release();
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+    uint8_t neutral[20]={0,20};
+    for(unsigned p=0;p<3;p++) {
+        if(!s_player_queues[p])continue;
+        xQueueReset(s_player_queues[p]);
+        (void)xQueueSend(s_player_queues[p],neutral,0);
+    }
+#endif
     xSemaphoreGive(s_input_mu);
 }
 
@@ -105,6 +118,24 @@ void usb_xbox_remote_report(const uint8_t report[20])
         if(xQueueSend(s_queue,report,0)!=pdTRUE)queue_release();
     }
     xSemaphoreGive(s_input_mu);
+}
+
+void usb_xbox_player_report(unsigned player,const uint8_t report[20])
+{
+    if(player==1) { usb_xbox_remote_report(report); return; }
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+    if(player<2 || player>4 || !s_input_mu || !xbox_report_valid(report))return;
+    if(xSemaphoreTake(s_input_mu,pdMS_TO_TICKS(10))!=pdTRUE)return;
+    QueueHandle_t queue=s_player_queues[player-2];
+    if(!queue) { xSemaphoreGive(s_input_mu); return; }
+    if(xQueueSend(queue,report,0)!=pdTRUE) {
+        uint8_t neutral[20]={0,20};
+        xQueueReset(queue);(void)xQueueSend(queue,neutral,0);
+    }
+    xSemaphoreGive(s_input_mu);
+#else
+    (void)report;
+#endif
 }
 
 /* Physical touch has priority while fresh; never mix local and remote states. */
@@ -209,7 +240,15 @@ static void xid_pump(void *unused)
 #if CONFIG_KVM_XBOX_S3_PLAYER1
     if (xQueueReceive(s_queue,s_state,0)==pdTRUE) s_deadline=esp_timer_get_time()+500000;
     if (esp_timer_get_time()>=s_deadline) { memset(s_state,0,20); s_state[1]=20; }
-    xbox_s3_route_tick(s_state);
+    memcpy(s_player_states[0],s_state,20);
+    for(unsigned p=0;p<3;p++) {
+        if(xQueueReceive(s_player_queues[p],s_player_states[p+1],0)==pdTRUE)
+            s_player_deadlines[p]=esp_timer_get_time()+500000;
+        if(esp_timer_get_time()>=s_player_deadlines[p]) {
+            memset(s_player_states[p+1],0,20);s_player_states[p+1][1]=20;
+        }
+    }
+    xbox_s3_route_tick(s_player_states);
     observe_input(s_state);
     return;
 #endif
@@ -256,6 +295,10 @@ esp_err_t usb_xbox_init(void)
     s_input_mu=xSemaphoreCreateMutex();
     if (!s_input_mu) return ESP_ERR_NO_MEM;
 #if CONFIG_KVM_XBOX_S3_PLAYER1
+    for(unsigned p=0;p<3;p++) {
+        s_player_queues[p]=xQueueCreate(16,20);
+        if(!s_player_queues[p])return ESP_ERR_NO_MEM;
+    }
     err=xbox_s3_route_init();
     if(err!=ESP_OK)return err;
     if(xTaskCreate(xid_worker,"xbox_s3",6144,NULL,8,NULL)!=pdPASS)return ESP_ERR_NO_MEM;

@@ -14,3 +14,6 @@ void usb_xbox_history(char held[48],char lines[3][48],char timing[48]);
 
 /* Full-resolution remote state; same priority and expiry as keyboard input. */
 void usb_xbox_remote_report(const uint8_t report[20]);
+
+/* Player is 1..4; slots 2..4 require S3 routing. */
+void usb_xbox_player_report(unsigned player,const uint8_t report[20]);

@@ -39,7 +39,7 @@ exercise multiplayer interactions in homebrew games, reproduce simultaneous
 inputs, and capture video/audio plus logs to investigate lag, frame-rate drops,
 and failures under multiplayer load.
 
-The solder-free plan uses **four Waveshare ESP32-S3-Zero boards**, one per Xbox
+The solder-free setup uses **four Waveshare ESP32-S3-Zero boards**, one per Xbox
 controller port, coordinated over the home Wi-Fi network by the main ESP-KVM:
 
 ```text
@@ -49,10 +49,10 @@ Main ESP-KVM -- Wi-Fi --+-- S3-Zero -- USB data cable + adapter -- Xbox port 1
                        +-- S3-Zero -- USB data cable + adapter -- Xbox port 4
 ```
 
-Each small board would emulate one XID controller and draw power from its Xbox
+Each small board emulates one XID controller and draws power from its Xbox
 port through the adapter and USB cable. Controller commands flow from the main
 ESP to the dongles and into the Xbox; the main ESP continues capture and test
-coordination without its own USB controller connection to the Xbox. The intended
+coordination without its own USB controller connection to the Xbox. The
 setup needs no soldering, headers, jumper wires, or separate dongle power
 supplies. Each board is initially programmed over USB from a computer.
 
@@ -65,12 +65,18 @@ Xbox Controller Tool. A [164-state follow-up sweep](S3-PLAYER1-VALIDATION.md)
 verified all buttons, intermediate pressures, both stick axes and circles.
 Standalone firmware and the
 opt-in home-network player-1 P4 route are documented in
-[the S3 firmware notes](../s3-dongle/README.md). Full four-player operation
-remains a planned extension.
+[the S3 firmware notes](../s3-dongle/README.md). All four boards were then
+provisioned and flashed, and the main P4 upgraded with independent per-player
+routing. [Four-player routing tests](S3-FOUR-PLAYER-VALIDATION.md) passed
+isolation, simultaneous states, independent expiry and global release with Xbox
+USB completions on every board. A subsequent real-game test in Guilty Gear
+Isuka verified all four player slots, independent movement/attacks and
+simultaneous jumps; the [gameplay report](S3-FOUR-PLAYER-VALIDATION.md#actual-four-player-gameplay-2026-10-25)
+records screenshots and the capture-restart limitation.
 Physical wireless gamepad pairing to the dongles would be a separate feature.
 
-The testing work should add per-player routing, bounded sequences with automatic
-release on timeout/disconnect, and coordinated runs with sequences sent ahead
+Per-player routing and automatic release on timeout/disconnect are implemented.
+The remaining testing work should add coordinated runs with sequences sent ahead
 for local execution. Save build IDs, per-player input order/timestamps, scheduled
 versus actual execution timing, transport delays/loss, and available game/capture
 performance evidence. Compare one-player and four-player runs so wireless timing

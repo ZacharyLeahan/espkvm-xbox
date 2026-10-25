@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-"""Create ignored player-1 build settings without printing home credentials."""
+"""Create ignored multi-player build settings without printing home credentials."""
 import argparse
 import json
 import os
@@ -25,7 +25,8 @@ def update(text,settings):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--mac',help='Player-1 S3 station MAC, required for a new pairing')
+    parser.add_argument('--mac',help='S3 station MAC for the selected player')
+    parser.add_argument('--player',type=int,choices=range(1,5),default=1)
     parser.add_argument('--main-config',type=Path,help='Existing P4 sdkconfig to preserve; otherwise only generate a private overlay')
     args=parser.parse_args()
     config=None
@@ -38,14 +39,22 @@ def main():
     if not wifi['WIFI_SSID']:raise ValueError('Set WIFI_SSID in the ignored root .env first')
     pair_path=ROOT/'.env.s3-route'
     pair=json.loads(pair_path.read_text()) if pair_path.exists() else {'key':secrets.token_hex(32)}
-    mac=args.mac or pair.get('mac','')
+    players=pair.get('players',{'1':pair['mac']} if pair.get('mac') else {})
+    mac=args.mac or players.get(str(args.player),'')
     if len(mac.split(':'))!=6 or any(len(b)!=2 or any(c not in '0123456789abcdefABCDEF' for c in b) for b in mac.split(':')):
         raise ValueError('Supply the identified S3 station MAC with --mac')
     if len(pair.get('key',''))!=64 or any(c not in '0123456789abcdef' for c in pair['key']):raise ValueError('Invalid saved pairing key')
-    pair['mac']=mac.lower();private_write(pair_path,json.dumps(pair)+'\n')
+    mac=mac.lower()
+    if any(value==mac and slot!=str(args.player) for slot,value in players.items()):
+        raise ValueError('This board is already assigned to another player')
+    players[str(args.player)]=mac
+    if '1' not in players:raise ValueError('Configure player 1 before additional players')
+    pair['players']=players
+    pair['mac']=players['1'];private_write(pair_path,json.dumps(pair)+'\n')
     common={'CONFIG_KVM_XBOX_S3_KEY':json.dumps(pair['key'])}
     s3={**common,'CONFIG_KVM_WIFI_DEFAULT_SSID':json.dumps(wifi['WIFI_SSID']),'CONFIG_KVM_WIFI_DEFAULT_PASSWORD':json.dumps(wifi['WIFI_PASSWORD'])}
     main_settings={**common,'CONFIG_KVM_USB_XBOX':'y','CONFIG_KVM_XBOX_S3_PLAYER1':'y','CONFIG_KVM_XBOX_S3_MAC':json.dumps(pair['mac'])}
+    main_settings.update({f'CONFIG_KVM_XBOX_S3_MAC{n}':json.dumps(players.get(str(n),'')) for n in (2,3,4)})
     private_write(ROOT/'boards/s3_player1.private.defaults',update('# Generated locally; contains credentials.\n',s3))
     private_write(ROOT/'boards/s3_route.private.defaults',update('# Generated locally; contains pairing material.\n',main_settings))
     s3_config=ROOT/'s3-dongle/sdkconfig'
