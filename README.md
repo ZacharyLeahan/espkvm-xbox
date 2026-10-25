@@ -86,6 +86,7 @@ traffic carried over the tailnet.
 
 | Guide | Contents |
 | --- | --- |
+| [Controller status](docs/CONTROLLER-STATUS.md) | Web and touchscreen P1-P4 indicators, activity and USB report diagnostics. |
 | [Four-player overview](docs/FOUR-PLAYER-OVERVIEW.md) | How the main ESP and four wireless controller dongles support multiplayer testing. |
 | [Agent testing](docs/XBOX-TESTING.md) | Observation helper, screenshots, fresh-frame evidence, and regression checks. |
 | [Controller setup](docs/XBOX-REMOTE-CONTROLLER.md) | USB wiring, Bluetooth pairing, mappings, and limits. |

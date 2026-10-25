@@ -657,6 +657,8 @@ void app_main(void)
         ESP_LOGI(TAG, "boot: storage skipped (WiFi mode; the co-processor holds the SD slot)");
     }
 #if CONFIG_KVM_USB_XBOX
+    extern void lcd_controller_status_init(void);
+    lcd_controller_status_init();
     capture_lcd_pad_register(usb_xbox_touch);
 #if CONFIG_KVM_XBOX_BLE
     xbox_ble_init();

@@ -67,6 +67,10 @@ jobs:
         run: |
           cc -std=c11 -Wall -Wextra -Werror -I components/kvm_hid/include tests/test_xbox_report.c -o /tmp/test_xbox_report
           /tmp/test_xbox_report
+          cc -std=c11 -Wall -Wextra -Werror -I components/kvm_hid/include tests/test_controller_status.c -o /tmp/test_controller_status
+          /tmp/test_controller_status
+          cc -std=c11 -Wall -Wextra -Werror -I components/video_pipeline -I components/video_pipeline/include tests/test_lcd_players.c -lm -o /tmp/test_lcd_players
+          /tmp/test_lcd_players
       - run: python3 s3-dongle/tools/test_configure.py
       - name: Build standalone S3 receiver without private settings
         uses: espressif/esp-idf-ci-action@v1

@@ -12,6 +12,7 @@ idf_component_register(
         kvm_storage
         esp_driver_gpio
         esp_tinyusb
+        esp_http_client
         esp_timer
         lwip
         mbedtls
