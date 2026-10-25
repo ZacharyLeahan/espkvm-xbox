@@ -62,6 +62,10 @@ bumps the patch).
 
 ### Fixed
 
+- Reserve HDMI audio I2S DMA during the capability probe and reuse the stopped
+  receiver across captures, avoiding late DMA allocation failure under load.
+  Log capture errors separately from transport counters.
+
 - Bound plain-HTTP send retries with nonblocking writes; allow PCM stalls up to
   250 ms. Live audio continuity remains under investigation.
 

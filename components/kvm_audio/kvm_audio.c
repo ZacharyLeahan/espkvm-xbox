@@ -55,6 +55,9 @@ static QueueHandle_t stamps;
 static kvm_audio_subscription_t *subscribers[KVM_AUDIO_CONSUMER_COUNT];
 static bool initialized;
 static esp_err_t init_result = ESP_ERR_INVALID_STATE;
+// Reserve DMA while probing, before runtime viewers fragment internal memory.
+// Only the serialized capture worker uses this channel; idle capture stops DMA.
+static i2s_chan_handle_t receiver;
 static bool worker_running;
 static portMUX_TYPE stats_lock = portMUX_INITIALIZER_UNLOCKED;
 static kvm_audio_status_t status;
@@ -123,6 +126,12 @@ static esp_err_t open_receiver(i2s_chan_handle_t *out)
         err = i2s_channel_register_event_callback(*out, &callbacks, NULL);
     }
     if (err != ESP_OK) {
+        ESP_LOGE(TAG, "receiver init: %s, internal free=%u largest=%u DMA free=%u largest=%u",
+                 esp_err_to_name(err),
+                 (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+                 (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),
+                 (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA),
+                 (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA));
         i2s_del_channel(*out);
         *out = NULL;
     }
@@ -159,7 +168,6 @@ static bool finish_worker(i2s_chan_handle_t rx, bool running, capture_buffers_t 
         return false;
     }
     if (running) i2s_channel_disable(rx);
-    if (rx) i2s_del_channel(rx);
     for (int i = 0; i < KVM_AUDIO_CONSUMER_COUNT; i++) {
         if (subscribers[i] && subscribers[i]->stats.terminal_error == ESP_OK)
             subscribers[i]->stats.terminal_error = error;
@@ -176,10 +184,10 @@ static bool finish_worker(i2s_chan_handle_t rx, bool running, capture_buffers_t 
 static void capture_task(void *arg)
 {
     (void)arg;
-    i2s_chan_handle_t rx = NULL;
+    i2s_chan_handle_t rx = receiver;
     bool running = false;
     capture_buffers_t *buffers = heap_caps_calloc(1, sizeof(*buffers), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    esp_err_t error = buffers ? open_receiver(&rx) : ESP_ERR_NO_MEM;
+    esp_err_t error = buffers ? ESP_OK : ESP_ERR_NO_MEM;
     uint32_t handled_overruns = 0;
     if (error == ESP_OK) {
         begin_epoch(&handled_overruns);
@@ -283,9 +291,7 @@ esp_err_t kvm_audio_init(void)
     if (initialized) return init_result;
     control = xSemaphoreCreateMutexStatic(&control_state);
     stamps = xQueueCreateStatic(STAMP_COUNT, sizeof(dma_stamp_t), stamp_storage, &stamp_state);
-    i2s_chan_handle_t rx = NULL;
-    init_result = open_receiver(&rx);
-    if (rx) i2s_del_channel(rx);
+    init_result = open_receiver(&receiver);
     status.rate = CONFIG_KVM_AUDIO_RATE;
     initialized = true;
     return init_result;
