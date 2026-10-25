@@ -69,5 +69,6 @@ lasts up to one second; reachability samples expire after four seconds.
   and hid old detail counts until fresh messages returned. The viewer did not
   take ownership from the existing controlling session.
 - The host renderer passed bounds/hit-target tests and produced a preview of
-  all four LCD states. Physical panel/tap confirmation was requested from the
-  operator and is pending; a rendered preview is not a panel photograph.
+  all four LCD states. On 2026-10-25, the operator confirmed that the physical
+  touchscreen shows the P1–P4 row and tapping a player opens its details.
+  The saved rendered preview is not a panel photograph.
