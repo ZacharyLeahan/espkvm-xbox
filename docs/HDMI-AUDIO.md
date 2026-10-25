@@ -21,6 +21,11 @@ seconds of audio, recovering brief overruns. Subjective audio quality,
 video/audio synchronization and physical end-to-end delay remain unverified.
 The sanitized [validation report](AUDIO-VALIDATION-2026-10-16.md) records exact
 metrics, independent WAV checks, fresh API checks, and reproduction steps.
+The [2026-10-25 follow-up](C790-TRANSPORT-2026-10-25.md) identifies a late DMA
+allocation failure, verifies reserved-receiver startup, and records a fully
+wired 180-second capture with zero reported queue/frame-index gaps. Wireless
+paths still show substantial gaps; connecting Ethernet cables alone does not
+ensure that the Mac routes browser traffic over Ethernet.
 
 ## Bring-up on the Function EV board (2026-10-16)
 
