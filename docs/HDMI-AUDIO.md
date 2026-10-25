@@ -21,6 +21,11 @@ seconds of audio, recovering brief overruns. Subjective audio quality,
 video/audio synchronization and physical end-to-end delay remain unverified.
 The sanitized [validation report](AUDIO-VALIDATION-2026-10-16.md) records exact
 metrics, independent WAV checks, fresh API checks, and reproduction steps.
+The [2026-10-25 follow-up](C790-TRANSPORT-2026-10-25.md) identifies a late DMA
+allocation failure, verifies reserved-receiver startup, and records a fully
+wired 180-second capture with zero reported queue/frame-index gaps. Wireless
+paths still show substantial gaps; connecting Ethernet cables alone does not
+ensure that the Mac routes browser traffic over Ethernet.
 
 ## Bring-up on the Function EV board (2026-10-16)
 
@@ -175,7 +180,11 @@ Mbit/s before HTTP/TCP/TLS overhead). Browser playback stays PCM. MicroSD record
 buffers hold about 40 ms total; the worker reads roughly 5 ms at a time. At 48 kHz, each 960-byte PCM block
 fits one TCP packet. CPU-side working buffers live in PSRAM. A
 separate asynchronous HTTP task keeps audio reads out of the HTTP server loop.
-TCP_NODELAY avoids Nagle delay; sends have a 250 ms socket timeout. Plain HTTP
+TCP_NODELAY avoids Nagle delay; sends have a two-second socket timeout so TCP
+can retransmit missing data before the application closes the stream. A live
+trial recovered a 1.26-second write stall that exceeded the former 250 ms
+budget. This improves connection recovery, not lossless or gap-free playback.
+The browser subscriber queue remains 40 ms. Plain HTTP
 uses nonblocking attempts with a yield between retries to avoid lwIP blocking
 write timeout overshoot. This is a stall budget, not a fixed playback buffer;
 scheduling and lock contention can still extend elapsed time. A DMA

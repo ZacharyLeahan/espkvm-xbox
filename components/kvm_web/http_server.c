@@ -2740,7 +2740,7 @@ static int locked_ssl_send(httpd_handle_t hd, int sockfd, const char *buf, size_
         tx_unlock(slot);
         return HTTPD_SOCK_ERR_FAIL;
     }
-    /* Respect the PCM listener's 250 ms timeout. Other sessions retain their
+    /* Respect the PCM listener's two-second timeout. Other sessions retain their
      * own send timeout, capped at five seconds. Never spin on WANT_WRITE. */
     struct timeval timeout = {0};
     socklen_t timeout_len = sizeof(timeout);
@@ -2923,7 +2923,7 @@ static int locked_http_send(httpd_handle_t hd, int sockfd, const char *buf, size
     }
     const int64_t deadline = esp_timer_get_time() + budget;
 #if CONFIG_KVM_HTTP_TX_DIAGNOSTICS
-    const bool probe_on = budget == 250000;
+    const bool probe_on = budget == 2000000;
     const int64_t probe_start = esp_timer_get_time();
     int64_t max_call = 0, max_yield = 0;
     unsigned retries = 0;

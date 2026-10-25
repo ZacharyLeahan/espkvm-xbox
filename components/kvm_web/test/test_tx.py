@@ -133,6 +133,13 @@ int main(void) {
     assert(locked_http_send(NULL,10,expected,6,0) == -1 && writes == 1 && shut == 1);
     reset(); results[0] = 2; results[1] = -1; results[2] = 4; count = 3;
     assert(locked_http_send(NULL,10,expected,6,0) == 6 && writes == 3 && yields == 1);
+    reset(); timeout_us = 2000000; send_elapsed = 300000;
+    results[0] = 2; results[1] = 4; count = 2;
+    assert(locked_http_send(NULL,10,expected,6,0) == 6 && writes == 2 && shut == 0);
+    assert(now == 600000); /* recover beyond the old 250 ms PCM budget */
+    reset(); timeout_us = 2000000;
+    assert(locked_http_send(NULL,10,expected,6,0) == -1 && shut == 1);
+    assert(now == 2000000 && yields == 200); /* recovery remains bounded */
     reset(); send_elapsed = 100000; results[0] = 2; results[1] = 4; count = 2;
     assert(locked_http_send(NULL,10,expected,6,0) == -1 && writes == 1 && shut == 1);
     reset(); send_elapsed = 5000000; results[0] = 2; results[1] = 4; count = 2;

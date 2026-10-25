@@ -52,7 +52,9 @@ def main(argv=None):
     peak = energy = 0.0
     # read1 returns available bytes, so missing source clocks cannot fill a long
     # blocking read and confuse the requested observation duration.
-    with opener.open(args.url.rstrip('/') + '/audio.pcm', timeout=2) as response:
+    # Outlast the sender's two-second recovery budget, so an early client read
+    # timeout does not prevent TCP retransmission from completing.
+    with opener.open(args.url.rstrip('/') + '/audio.pcm', timeout=3) as response:
         rate = int(response.headers.get('X-Audio-Rate', '0'))
         if rate not in (32000, 44100, 48000, 88200, 96000) or response.headers.get('X-Audio-Format') != 's16le-stereo':
             raise ValueError('Unexpected audio format')

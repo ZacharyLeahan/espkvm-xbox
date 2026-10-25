@@ -62,6 +62,15 @@ bumps the patch).
 
 ### Fixed
 
+- Allow HDMI PCM writes up to two seconds for TCP retransmission recovery,
+  preserving bounded audio queues and recording explicit drops. Extend the
+  capture helper's read timeout beyond that budget. Network audio gaps remain
+  under investigation.
+
+- Reserve HDMI audio I2S DMA during the capability probe and reuse the stopped
+  receiver across captures, avoiding late DMA allocation failure under load.
+  Log capture errors separately from transport counters.
+
 - Bound plain-HTTP send retries with nonblocking writes; allow PCM stalls up to
   250 ms. Live audio continuity remains under investigation.
 
