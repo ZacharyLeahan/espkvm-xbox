@@ -43,6 +43,9 @@ bumps the patch).
 
 ### Documentation
 
+- Add a concise four-player architecture explainer linking the wireless controller
+  dongles, capture feedback, verified gameplay and multiplayer testing goals.
+
 - Record the proposed learned touchscreen navigation loop and its phased
   validation plan; mark it as unimplemented.
 
