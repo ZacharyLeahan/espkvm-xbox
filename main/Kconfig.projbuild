@@ -54,11 +54,11 @@ menu "ESP-KVM"
                 cable. Touchscreen controller overlay is not implemented.
 
         config KVM_XBOX_S3_PLAYER1
-            bool "Route Xbox player 1 to paired S3 over home Wi-Fi"
+            bool "Route Xbox players to paired S3s over home Wi-Fi"
             depends on KVM_USB_XBOX
             default n
             help
-                Replace local P4 USB output with authenticated UDP to one S3.
+                Replace local P4 USB output with authenticated UDP to up to four S3s.
                 Existing controller inputs and 500 ms expiry remain in use.
         config KVM_XBOX_S3_KEY
             string "Private 64-character hexadecimal S3 pairing key"
@@ -68,6 +68,21 @@ menu "ESP-KVM"
             string "Player 1 S3 station MAC"
             depends on KVM_XBOX_S3_PLAYER1
             default "ac:27:6e:b0:ce:a4"
+
+        config KVM_XBOX_S3_MAC2
+            string "Player 2 S3 station MAC (empty disables this slot)"
+            depends on KVM_XBOX_S3_PLAYER1
+            default ""
+
+        config KVM_XBOX_S3_MAC3
+            string "Player 3 S3 station MAC (empty disables this slot)"
+            depends on KVM_XBOX_S3_PLAYER1
+            default ""
+
+        config KVM_XBOX_S3_MAC4
+            string "Player 4 S3 station MAC (empty disables this slot)"
+            depends on KVM_XBOX_S3_PLAYER1
+            default ""
 
         comment "Disabled features cost no flash and no RAM."
 

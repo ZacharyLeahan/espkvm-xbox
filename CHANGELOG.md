@@ -9,13 +9,26 @@ bumps the patch).
 
 ### Added
 
+- Extend S3 routing to four independently paired original-Xbox controller
+  boards. Add player-addressed full-resolution WebSocket input while retaining
+  the player-1 command, independent expiry, and release-all across all slots.
+  Add multi-board provisioning and an isolation/simultaneous-input test tool.
+  Provision and flash all four boards; verify routing, independent expiry and
+  global release with Xbox USB completions on every controller. Keep learned
+  authenticated routes sending through missed discovery beacons. After board
+  repositioning, repeat all routing checks and 90 continuity samples per board
+  without observed lease expiry or status-request failures. Validate four-player
+  Guilty Gear Isuka gameplay (independent characters, movement/attacks and
+  simultaneous jumps), publish display evidence, and record a capture restart
+  during the dashboard-to-game mode switch. Add an enabled four-route P4 CI build.
+
 - Add a standalone ESP32-S3-Zero original-Xbox XID test dongle with a WPA2
   access point, browser controls, raw report endpoint, and stale-input release.
   Add opt-in player-1 routing from the P4 using home Wi-Fi, authenticated
   discovery/state packets, replay checks, and independent input expiry.
   Add full-resolution Xbox state on control WebSocket opcode 0x08 and record
   a verified 164-state real-console sweep. Fix S3 receiver scheduling so USB
-  service is not starved. Four-player operation remains pending.
+  service is not starved. See the separate four-player routing validation.
 
 ### Diagnostics
 

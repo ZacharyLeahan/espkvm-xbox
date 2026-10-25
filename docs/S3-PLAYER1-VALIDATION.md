@@ -5,7 +5,9 @@
 Commands traversed the main ESP32-P4, home Wi-Fi, Waveshare ESP32-S3-Zero,
 USB adapter and physical controller port 1. Xbox Controller Tool's **Gamepad /
 Control Test Page** displayed the expected numeric values and button highlights.
-The other three boards have not been configured or validated.
+At the time of this sweep, the other three boards were not configured. The
+subsequent [four-player routing validation](S3-FOUR-PLAYER-VALIDATION.md) records
+their provisioning and USB tests separately.
 
 ![Representative Xbox display values from the hardware sweep](assets/s3-player1-validation.png)
 

@@ -76,6 +76,24 @@ jobs:
           path: s3-dongle
           command: idf.py -D S3_USE_PARENT_TINYUSB=OFF build
 
+  xbox-four-player:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - name: Build P4 with all four S3 routes enabled
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v6.1
+          target: esp32p4
+          command: >-
+            git config --global --add safe.directory "$PWD" &&
+            idf.py -B build.s3-route-ci
+            -D SDKCONFIG=build.s3-route-ci/sdkconfig
+            -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;boards/funcev_p4.defaults;boards/funcev_xbox.defaults;tests/s3_route.defaults"
+            build
+
   # The console's own logic: the fake machine the demo runs on, the settings
   # file, the keyboard tables, the text layer. Node runs the TypeScript as it
   # is, so this needs nothing but a checkout and an npm ci - and it is where a

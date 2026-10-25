@@ -23,10 +23,12 @@ def signed(key, kind, sequence, session, receiver, mac, report):
     raw = WIRE.pack(b'X3P1', kind, 0, sequence, session, receiver, mac, report, bytes(32))
     return raw[:48] + hmac.digest(key, raw[:48], 'sha256')
 
-def discover(timeout=20):
+def discover(timeout=20,player=1):
     private = json.loads((ROOT / '.env.s3-route').read_text())
     key = bytes.fromhex(private['key'])
-    mac = bytes.fromhex(private['mac'].replace(':', ''))
+    identity=private.get('players',{'1':private['mac']}).get(str(player))
+    if not identity:raise ValueError(f'Player {player} has no paired board')
+    mac = bytes.fromhex(identity.replace(':', ''))
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(('', 3335))
@@ -51,8 +53,9 @@ def count(text):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--test-neutral',action='store_true')
+    parser.add_argument('--player',type=int,choices=range(1,5),default=1)
     args=parser.parse_args()
-    sock,key,mac,boot,ip,usb=discover()
+    sock,key,mac,boot,ip,usb=discover(player=args.player)
     print(f'Authenticated S3 at {ip}, USB configured={usb}')
     print(status(ip))
     if not args.test_neutral:return

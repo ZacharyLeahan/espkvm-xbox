@@ -58,13 +58,15 @@ The main board, bridge, and LCD cost $220.03. Documented spend including four
 controller adapters and four S3-Zero boards is **$274.85**;
 [receipt details and exclusions](docs/FORK-HISTORY.md#hardware-purchases).
 
-**Player 1 now works over Wi-Fi.** A Waveshare ESP32-S3-Zero emulates one Xbox
+**All four controllers now route over Wi-Fi.** Each Waveshare ESP32-S3-Zero emulates one Xbox
 controller, receiving full-resolution state from the main KVM over home Wi-Fi.
-All buttons, trigger pressure, both stick axes and circular sweeps were checked
+For player 1, all buttons, trigger pressure, both stick axes and circular sweeps were checked
 in Xbox Controller Tool: [164-state hardware validation](docs/S3-PLAYER1-VALIDATION.md).
-[Build and pairing instructions](s3-dongle/README.md) cover the first board;
-[the four-player extension](docs/XBOX-RIG-DETAILS.md#planned-four-player-wireless-homebrew-testing)
-remains planned.
+All four boards passed route isolation, independent expiry and global release,
+then controlled separate characters and simultaneous jumps in a real
+Guilty Gear Isuka four-player match:
+[four-player validation and limits](docs/S3-FOUR-PLAYER-VALIDATION.md).
+[Build and pairing instructions](s3-dongle/README.md) cover all four boards.
 
 ## Build and use
 

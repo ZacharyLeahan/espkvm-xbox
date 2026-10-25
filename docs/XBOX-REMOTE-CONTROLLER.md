@@ -322,7 +322,16 @@ In `KVM_USB_XBOX` builds, authenticated `/ws` accepts `0x08` plus exactly 20
 original-Xbox XID input bytes. It participates in the existing first-come control
 lease and explicit `0x07` takeover; a viewer cannot inject it. The same touch and
 fresh Bluetooth priorities apply. Invalid frames are ignored. No REST endpoint
-shape or existing opcode changed.
+shape changed. The legacy 21-byte command still addresses player 1.
+
+For four-player S3 routing, send exactly 22 bytes: `[0x08, player, ...XID]`,
+where `player` is 1..4 and XID contains the same 20 bytes below. Each slot has
+its own queue and 500 ms timeout; refreshing one never extends another.
+Players 2..4 require `KVM_XBOX_S3_PLAYER1` and their configured station MACs.
+Keyboard, touch and Bluetooth retain their player-1 mapping and priorities.
+Release-all, takeover and controller disconnect release all remote slots.
+The console readiness indicator continues to describe player 1; inspect each
+S3 status and USB completion counters when checking the other slots.
 
 | XID offsets (after the opcode) | Meaning |
 | --- | --- |

@@ -2,8 +2,10 @@
 // Run only with Xbox Controller Tool's Control Test Page open on the console.
 import {mkdir,writeFile,appendFile} from 'node:fs/promises';
 import {join} from 'node:path';
-const [main,dongle,out]=process.argv.slice(2);
-if(!main||!dongle||!out)throw new Error('Usage: node sweep-player1.mjs MAIN S3 NEW_EVIDENCE_DIR');
+const [main,dongle,out,slot]=process.argv.slice(2);
+const player=Number(slot||1);
+if(!Number.isInteger(player)||player<1||player>4)throw new Error("Player must be 1..4");
+if(!main||!dongle||!out)throw new Error('Usage: node sweep-player1.mjs MAIN S3 NEW_EVIDENCE_DIR [PLAYER]');
 await mkdir(out,{recursive:false});
 const neutral=()=>{const b=new Uint8Array(20);b[1]=20;return b;};
 const cases=[];
@@ -33,7 +35,7 @@ const url=new URL('/ws',main);url.protocol=url.protocol==='https:'?'wss:':'ws:';
 const ws=new WebSocket(url);let current=neutral(),refresh;
 const viewerAbort=new AbortController();
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
-const send=()=>{if(ws.readyState===WebSocket.OPEN)ws.send(new Uint8Array([8,...current]));};
+const send=()=>{if(ws.readyState===WebSocket.OPEN)ws.send(new Uint8Array([8,player,...current]));};
 const get=async(origin,path)=>{const r=await fetch(new URL(path,origin),{signal:AbortSignal.timeout(5000)});if(!r.ok)throw new Error(`${path}: HTTP ${r.status}`);return r;};
 const deadline=setTimeout(()=>{clearInterval(refresh);if(ws.readyState===WebSocket.OPEN)ws.send(new Uint8Array([5]));ws.close();viewerAbort.abort();},480000);
 try{

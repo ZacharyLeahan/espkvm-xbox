@@ -3376,6 +3376,7 @@ static esp_err_t ws_input_handler(httpd_req_t *req)
 #if CONFIG_KVM_USB_XBOX
     case WS_C2D_XBOX_REPORT:
         if(pkt.len==21)usb_xbox_remote_report(&buf[1]);
+        else if(pkt.len==22)usb_xbox_player_report(buf[1],&buf[2]);
         break;
 #endif
     case WS_C2D_CONSUMER:

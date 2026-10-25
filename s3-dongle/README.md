@@ -4,17 +4,26 @@
 ESP-IDF 6.1 firmware for a Waveshare ESP32-S3-Zero (4 MB flash, 2 MB PSRAM).
 One board emulates one Controller S in one physical original Xbox controller
 port, powered through a controller-port USB adapter and USB-C data cable.
-Player 1 is validated on real hardware; the other three boards are not configured.
+Player 1 has a verified 164-state real-console sweep. Four-player routing is
+implemented and all four boards are provisioned. The isolation, simultaneous-state,
+timeout and release checks passed with Xbox USB completions; see the
+[four-player validation](../docs/S3-FOUR-PLAYER-VALIDATION.md). After repositioning
+boards 2 and 4, the 2026-10-25 retest passed all routing checks and 90 continuity
+samples per board without observed lease expiry or status failures. A subsequent
+Guilty Gear Isuka VS match verified all four player slots, independent crouches,
+analog movement, attacks and simultaneous jumps. See the report for screenshots
+and the launch/capture restart limitation.
 This is for the original Xbox, not Xbox 360/One/Series.
 
 ```text
-Browser/agent -> main ESP32-P4 -> home Wi-Fi -> S3-Zero -> Xbox controller port 1
+Browser/agent -> main ESP32-P4 -> home Wi-Fi -> S3-Zero (one per player) -> Xbox controller ports 1..4
 ```
 
 The main ESP retains video/audio capture and keyboard/touch/Bluetooth input
 arbitration. Opt-in `KVM_XBOX_S3_PLAYER1` replaces its local USB-controller output
 with authenticated Wi-Fi state. Both ends release stale input after 500 ms.
-The Xbox readiness flag follows signed S3 announcements of configured USB.
+The Xbox readiness flag follows player 1's signed announcement of configured USB.
+Players 2..4 have independent discovery, replay state, queues and timeouts.
 
 ## Configure, build, flash
 
@@ -27,6 +36,19 @@ From the repository root, using ESP-IDF's Python:
 ```sh
 python s3-dongle/tools/configure.py --mac ac:27:6e:b0:ce:a4
 ```
+
+For additional boards, identify each station MAC and assign a unique slot:
+
+```sh
+python s3-dongle/tools/configure.py --player 2 --mac SECOND_BOARD_MAC --main-config build.s3-player1/sdkconfig
+python s3-dongle/tools/configure.py --player 3 --mac THIRD_BOARD_MAC --main-config build.s3-player1/sdkconfig
+python s3-dongle/tools/configure.py --player 4 --mac FOURTH_BOARD_MAC --main-config build.s3-player1/sdkconfig
+```
+
+The same private S3 firmware image works on all four boards: the main P4 maps
+station MACs to player numbers. Label each board and plug it into the matching
+Xbox port. Rebuild and flash the P4 after saving all identities. Reassigning a
+slot preserves the other slots; assigning one board twice is rejected.
 
 This preserves a saved pairing key in ignored `.env.s3-route` and writes two
 ignored, mode-600 overlays. To preserve an existing P4 configuration, also pass
@@ -83,7 +105,9 @@ sends 80-byte HMAC-SHA256 packets containing the full 20-byte XID state to UDP
 authenticates but does not encrypt packets. The S3 boot nonce rejects prior-boot
 state; sequence numbers reject same-session duplicates/reordering. A new P4
 session waits for the previous 500 ms lease to expire. Lost discovery expires
-P4 readiness after four seconds. Client isolation/separate subnets can prevent
+P4 readiness after four seconds, but an already authenticated learned route
+continues unicast output through lost beacons. Receiver boot checks and input
+timeouts remain independent of discovery. Client isolation/separate subnets can prevent
 discovery. This prototype is intended for the trusted home network.
 
 Version 0.2.1 fixes a 5 ms receiver wait rounding to zero at 100 Hz. The receiver
@@ -95,7 +119,8 @@ check host completions and the real console's displayed input.
 ## Full-resolution control through the main ESP
 
 The existing authenticated/control-owned `/ws` gains opcode `0x08` only in
-Xbox firmware: one opcode byte followed by exactly 20 XID input bytes. Other
+Xbox firmware: `[0x08, ...20 XID bytes]` for player 1, or
+`[0x08, player, ...20 XID bytes]` with player 1..4. Other
 existing WebSocket formats and REST endpoints are unchanged. Invalid size,
 output-report header, or reserved digital bits are ignored. The raw command
 uses the same touch/Bluetooth priority and 500 ms expiry as keyboard input.
@@ -110,7 +135,9 @@ states. These tools deliberately take control of the main ESP's session.
 ```sh
 node s3-dongle/tools/test-player1.mjs http://esp.local http://S3_IP
 node s3-dongle/tools/test-raw-player1.mjs http://esp.local http://S3_IP
-node s3-dongle/tools/sweep-player1.mjs http://esp.local http://S3_IP NEW_EVIDENCE_DIR
+node s3-dongle/tools/sweep-player1.mjs http://esp.local http://S3_IP NEW_EVIDENCE_DIR [PLAYER]
+node s3-dongle/tools/test-four-players.mjs http://esp.local NEW_EVIDENCE_DIR http://P1_IP http://P2_IP http://P3_IP http://P4_IP
+python s3-dongle/tools/probe.py --player 2 --test-neutral
 ```
 
 The sweep captures all 164 expected states, screenshot evidence and actual USB
@@ -128,6 +155,8 @@ and receiver lease expiry using only neutral state. Do not run it during the
 live controller sweep.
 
 See the [hardware validation report](../docs/S3-PLAYER1-VALIDATION.md) for the
-observed ranges, method, results and limits. Four-player routing, coordinated
-execution, rumble, OTA, and a proportional browser gamepad panel remain future
-work. Return to local P4 USB output by disabling `KVM_XBOX_S3_PLAYER1` and rebuilding.
+observed ranges, method, results and limits. The four-player test checks per-board input isolation, simultaneous states,
+independent expiry, global release and disconnect, with Xbox USB completions.
+It does not establish physical Xbox port assignment or numeric display values;
+check those in the console test app separately. Coordinated execution, rumble,
+OTA, and a proportional browser gamepad panel remain future work. Return to local P4 USB output by disabling `KVM_XBOX_S3_PLAYER1` and rebuilding.
