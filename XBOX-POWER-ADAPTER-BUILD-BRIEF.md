@@ -83,7 +83,11 @@ with either button. EJECT is deliberately agent-commanded, not physical-only.
 Default freeze recovery uses POWER; eject-start can select a different Stellar
 boot mode. Both need fresh state checks and separate firmware/API support.
 
-The ESP controls the relay; a separate smart plug cycles Xbox AC. Those parts
+The existing ESP-KVM controls two relays powered by one independent 5 V supply.
+No extra Pico, XERC or internal Wi-Fi board is needed. After AC restoration, the
+Xbox supplies its own standby power; the relay simply presses POWER. Please
+verify startup after an AC disconnect/restore and preserve all four controller
+ports. A separate smart plug cycles Xbox AC. Those parts
 are outside this adapter request. See the **[full setup plan and photo wiring
 diagram](XBOX-POWER-RELAY-SETUP.md)** for context. Additional preliminary
 [technical notes](XBOX-POWER-ADAPTER-TECHNICAL-NOTES.md) are available if needed.

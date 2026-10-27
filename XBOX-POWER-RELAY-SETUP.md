@@ -1,6 +1,10 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Proposed setup: agent-commanded Xbox POWER and EJECT
 
+Preferred approach: reuse the [XWiFi button technique](docs/XBOX-XWIFI-BUTTONS.md)
+in our existing ESP-KVM, with isolated contacts rather than bare GPIO wiring.
+No extra Pico, internal Wi-Fi MCU, XERC or IR emitter is needed.
+
 Both buttons are in scope. Codex can command the ESP to **press POWER** or
 **press EJECT**, including deliberately starting the Xbox with either button.
 "Agent-commanded" does not mean someone must physically press the console.
@@ -30,6 +34,15 @@ Xbox-button connection to ESP GPIO, control ground or 5 V. Existing HDMI/USB
 may already join system grounds elsewhere; this is not whole-rig isolation.
 The relay supply stays independent of switched Xbox AC. Verify supply polarity,
 current headroom with both channels active, reset behavior and backfeed.
+
+## Why it can start after Xbox AC returns
+
+The KVM and one shared 5 V relay supply remain powered independently. The Xbox
+PSU restores its own standby circuit after AC returns; that circuit responds to
+POWER without the Xbox OS running. Wait for confirmed restoration and qualified
+standby readiness, then pulse only if fresh evidence says the console is off.
+The ESP supplies no Xbox power and draws no accessory current from Xbox standby.
+A failed standby supply cannot be fixed by repeatedly pressing POWER.
 
 ## Xbox installation: either approach is acceptable
 
