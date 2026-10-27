@@ -66,6 +66,7 @@ Xbox POWER side A o                                o Xbox POWER side B
                  +---- NO [relay contact] COM -----+
                        (I connect this relay)
 
+Each pair passes through one keyed two-pin disconnect.
 Repeat the same arrangement separately for EJECT.
 ```
 
