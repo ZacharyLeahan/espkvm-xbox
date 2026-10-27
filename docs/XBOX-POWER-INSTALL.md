@@ -1,6 +1,10 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Xbox power-control installer worksheet
 
+Preferred architecture: [existing ESP-KVM with isolated POWER/EJECT contacts](XBOX-XWIFI-BUTTONS.md).
+Keep KVM and relay power independent of switched Xbox AC; no extra internal
+microcontroller or IR receiver is required. This remains a proposed installation.
+
 Current build scope: both POWER and EJECT, using independent isolated relay
 channels. Plug-in or professionally soldered, strain-relieved button leads are
 accepted. See the [current build brief](../XBOX-POWER-ADAPTER-BUILD-BRIEF.md) and

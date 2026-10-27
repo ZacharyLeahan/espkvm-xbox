@@ -3,7 +3,7 @@
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 root=Path(__file__).resolve().parent.parent
-im=Image.new('RGB',(1800,2200),'#f3f6fb');d=ImageDraw.Draw(im)
+im=Image.new('RGB',(1800,2390),'#f3f6fb');d=ImageDraw.Draw(im)
 font='/System/Library/Fonts/Supplemental/Arial.ttf'
 def txt(x,y,s,n=25,c='#24324a'):d.text((x,y),s,font=ImageFont.truetype(font,n),fill=c)
 def lines(x,y,ss,n=25,step=35):
@@ -16,8 +16,8 @@ def arr(points,c='#456386'):
  d.line(points,fill=c,width=6);x,y=points[-1];px,py=points[-2]
  if x>px:d.polygon([(x,y),(x-16,y-9),(x-16,y+9)],fill=c)
  elif y>py:d.polygon([(x,y),(x-9,y-16),(x+9,y-16)],fill=c)
-txt(40,25,'Xbox remote control: POWER + EJECT',45)
-txt(40,88,'Codex agent → ESP API → two independent relays → real button contacts',30)
+txt(40,25,'Existing ESP-KVM: wired POWER + EJECT',45)
+txt(40,88,'XWiFi-style button control — isolated contacts; no extra Pico, XERC or IR',30)
 txt(40,135,'PROPOSED: firmware/API work, live GPIO audit and installer verification still required.',24,'#a04b15')
 box(40,195,1720,110,'1. Agent-commanded buttons','#eaf3ff')
 txt(65,250,'PRESS POWER or PRESS EJECT — either can request startup; neither is an ON/OFF state-set command.',26)
@@ -48,8 +48,12 @@ lines(510,1380,['Option A: plug-in pass-through adapter, like historical Xecuter
 arr([(935,1250),(935,1310)],'#138467');arr([(1515,1250),(1515,1310)],'#138467')
 box(40,1765,1720,215,'8. Hard-freeze recovery: Shelly switches Xbox AC only','#eaf3ff')
 pic('roadmap-assets/product-photos/shelly-us-gen4.jpg',60,1820,190,140)
-lines(290,1830,['Cut AC → confirm off / wait → restore AC → check fresh power state.', 'If Xbox remains off: default to one POWER pulse, then verify a fresh boot.', 'Keep ESP-KVM, relay supply and network powered independently.'],28)
-box(40,2025,1720,110,'Button commands and confirmation','#fff4e8')
-txt(65,2080,'EJECT is agent-commanded (not physical-only); Stellar eject-start may choose a different boot mode.',26)
-txt(40,2160,'Photos: Adafruit / Shelly / historical X3 guide p.12; ESP reference: Espressif. Not to scale. No verified Xbox solder-pad map.',21)
+lines(290,1830,['Cut AC → confirm off / wait → restore AC → check fresh power state.', 'If Xbox remains off: default to one POWER pulse, then verify a fresh boot.', 'Keep ESP-KVM, ONE relay supply and network powered independently.'],28)
+box(40,2025,1720,155,'9. Where startup power comes from','#ecf8f1')
+lines(65,2080,['Restored AC → Xbox PSU → standby-powered button controller → POWER press starts Xbox.',
+               'The ESP does NOT power the Xbox or draw accessory power from its standby rail.',
+               'Verify standby readiness before pressing; a failed standby supply means stop.'],26)
+box(40,2220,1720,100,'Agent commands','#fff4e8')
+txt(65,2270,'Codex can press either button. Default recovery uses POWER; qualify Stellar eject-start separately.',25)
+txt(40,2350,'Photos: Adafruit / Shelly / historical X3 guide p.12; ESP reference: Espressif. Not to scale. No verified Xbox solder-pad map.',21)
 im.save(root/'roadmap-assets/xbox-power-relay-setup.png')
