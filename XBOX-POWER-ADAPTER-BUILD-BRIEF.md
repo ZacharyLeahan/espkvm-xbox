@@ -29,6 +29,51 @@ Two separate two-wire pairs are preferred. Never join POWER and EJECT signals.
 Do not connect accessory power, ESP GPIO or ESP/control ground to these leads;
 they will connect only to isolated relay contacts. No extra Pico or XERC is needed.
 
+## Wire and solder locations
+
+Use small, flexible **stranded insulated hookup wire**, approximately **26-28 AWG**
+as a starting point. Choose the final size to fit the actual solder pads and
+connector contacts; use larger wire only through a properly supported transition
+if needed. Keep each pair together and label both connector halves.
+
+Prefer soldering on the **front POWER/EJECT button board**, with one wire on each
+of the two electrical sides of the corresponding switch. Verify the pads with
+AC disconnected: the two selected points should become connected when that
+button is pressed. On a four-leg tactile switch, some legs may already be
+internally connected; do not mistake two legs on the same electrical side for
+the two switch contacts. Leave the original switch and its wiring in place.
+
+**Exact solder-pad locations and board orientation are not verified here.**
+Identify them on the actual board by continuity testing and provide a marked
+photo. Do not solder to an LED connection or rely on wire color/assumed pinout.
+
+## Why two wires per button?
+
+Pressing a button joins two electrical points. The relay must join those same
+two points, so one wire goes to each side. Its contact is wired **in parallel**
+with the physical switch, allowing either to operate the button.
+
+```text
+                   Original button stays installed
+                 +--------[ POWER switch ]--------+
+                 |                                |
+Xbox POWER side A o                                o Xbox POWER side B
+                 |                                |
+               wire 1                           wire 2
+                 |                                |
+           keyed disconnect                 keyed disconnect
+                 |                                |
+                 +---- NO [relay contact] COM -----+
+                       (I connect this relay)
+
+Each pair passes through one keyed two-pin disconnect.
+Repeat the same arrangement separately for EJECT.
+```
+
+**Four wires total: two for POWER and two for EJECT.** A return may be electrically
+common inside the Xbox, but please supply two labeled pairs rather than combining
+them. These are button signal/return leads, not a positive/negative power supply.
+
 ## Verification before handoff
 
 Identify the actual switch contacts by continuity, rather than assumed pin numbers
