@@ -1,0 +1,158 @@
+{
+  "checked_date": "2026-10-27",
+  "method": "read-only HTTP GET; no commands or settings writes",
+  "firmware": {
+    "version": "v.0.56.1-167-g0c57c55-dirty",
+    "built": "Oct 25 2026 13:15:15",
+    "boardId": "funcev",
+    "idf": "v6.1",
+    "partition": "ota_1"
+  },
+  "atx_live": {
+    "enabled": false,
+    "known": false,
+    "on": false
+  },
+  "settings": {
+    "atx_enable": false,
+    "atx_pwr_gpio": 46,
+    "atx_rst_gpio": 47,
+    "atx_led_gpio": -1,
+    "atx_short_ms": 200,
+    "atx_long_ms": 5000,
+    "atx_active_high": true,
+    "atx_led_ah": true,
+    "disp_enable": false,
+    "disp_type": 0,
+    "disp_rotate_180": false,
+    "disp_sclk": 20,
+    "disp_mosi": 21,
+    "disp_cs": 22,
+    "disp_dc": 26,
+    "disp_rst": 33,
+    "disp_sda": -1,
+    "disp_scl": -1,
+    "disp_bl": -1
+  },
+  "fixed_reservations": [
+    {
+      "pin": 7,
+      "use": "Capture I2C SDA"
+    },
+    {
+      "pin": 8,
+      "use": "Capture I2C SCL"
+    },
+    {
+      "pin": 23,
+      "use": "Capture reset"
+    },
+    {
+      "pin": 43,
+      "use": "microSD CLK"
+    },
+    {
+      "pin": 44,
+      "use": "microSD CMD"
+    },
+    {
+      "pin": 39,
+      "use": "microSD D0"
+    },
+    {
+      "pin": 40,
+      "use": "microSD D1"
+    },
+    {
+      "pin": 41,
+      "use": "microSD D2"
+    },
+    {
+      "pin": 42,
+      "use": "microSD D3"
+    },
+    {
+      "pin": 50,
+      "use": "Ethernet REFCLK"
+    },
+    {
+      "pin": 49,
+      "use": "Ethernet TX_EN"
+    },
+    {
+      "pin": 34,
+      "use": "Ethernet TXD0"
+    },
+    {
+      "pin": 35,
+      "use": "Ethernet TXD1 / BOOT button"
+    },
+    {
+      "pin": 28,
+      "use": "Ethernet CRS_DV"
+    },
+    {
+      "pin": 29,
+      "use": "Ethernet RXD0"
+    },
+    {
+      "pin": 30,
+      "use": "Ethernet RXD1"
+    },
+    {
+      "pin": 31,
+      "use": "Ethernet MDC"
+    },
+    {
+      "pin": 52,
+      "use": "Ethernet MDIO"
+    },
+    {
+      "pin": 51,
+      "use": "Ethernet PHY reset"
+    },
+    {
+      "pin": 18,
+      "use": "WiFi co-processor CLK"
+    },
+    {
+      "pin": 19,
+      "use": "WiFi co-processor CMD"
+    },
+    {
+      "pin": 14,
+      "use": "WiFi co-processor D0"
+    },
+    {
+      "pin": 15,
+      "use": "WiFi co-processor D1"
+    },
+    {
+      "pin": 16,
+      "use": "WiFi co-processor D2"
+    },
+    {
+      "pin": 17,
+      "use": "WiFi co-processor D3"
+    },
+    {
+      "pin": 54,
+      "use": "WiFi co-processor reset"
+    },
+    {
+      "pin": 6,
+      "use": "WiFi co-processor IO2"
+    },
+    {
+      "pin": 45,
+      "use": "SD_PWRn (needs a resistor move to free)"
+    }
+  ],
+  "headerVerified": false,
+  "observations": {
+    "network_mode": "wifi",
+    "network_up": true
+  },
+  "matching_version_binary": "build.s3-player1/espkvm.bin",
+  "binary_identity_limit": "Version string match only; dirty build and live image hash not verified."
+}
