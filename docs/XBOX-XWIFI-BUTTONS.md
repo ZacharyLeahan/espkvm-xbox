@@ -25,7 +25,9 @@ UNSWITCHED POWER                         SWITCHED XBOX POWER
 Each NO/COM pair goes across one verified physical button's contacts. Closing
 it emulates the button; opening it releases the button. Preserve the original
 buttons/LEDs. Professionally soldered, insulated leads with strain relief and
-keyed disconnects are acceptable, as is the passive inline adapter.
+a four-pin sidewall port are the selected installation. Use two loose keyed
+disconnects only if port mounting is impractical. The passive inline adapter
+remains a historical alternative. See the [current linked shopping list](../XBOX-POWER-ADAPTER-BUILD-BRIEF.md#parts-to-send-the-installer).
 
 The ESP and both relay drivers remain powered when Xbox AC is absent. They do
 not power the Xbox. After AC restoration, the Xbox PSU supplies its own standby
@@ -62,7 +64,7 @@ features. No SDA/SCL, HDD-key, LED-control or controller-port wiring is needed.
 | Control ground | J1-39 -> both relay grounds and external supply negative |
 | Relay power | One regulated independent 5 V supply, branched to both boards |
 | Xbox side | Each relay NO/COM across its verified POWER or EJECT contacts; NC unused |
-| Disconnects | Two labeled #2880 keyed pairs or equivalent installer-selected connectors |
+| Disconnects | #5319 sidewall socket + #5318 plug; two #2880 sets as backup |
 | State evidence | Fresh calibrated plug metering initially; isolated switched-rail sensing if inadequate |
 
 These are the same two channels in the [current photo wiring plan](../XBOX-POWER-RELAY-SETUP.md).

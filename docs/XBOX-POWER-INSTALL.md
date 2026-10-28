@@ -6,8 +6,8 @@ Keep KVM and relay power independent of switched Xbox AC; no extra internal
 microcontroller or IR receiver is required. This remains a proposed installation.
 
 Current build scope: both POWER and EJECT, using independent isolated relay
-channels. Plug-in or professionally soldered, strain-relieved button leads are
-accepted. See the [current build brief](../XBOX-POWER-ADAPTER-BUILD-BRIEF.md) and
+channels. The selected installation uses professionally soldered front-button
+leads and a four-pin sidewall port; loose two-pin disconnects are the fallback. See the [current build brief](../XBOX-POWER-ADAPTER-BUILD-BRIEF.md) and
 [two-channel wiring plan](../XBOX-POWER-RELAY-SETUP.md). The investigation below
 retains the earlier POWER-only baseline; EJECT is available to Codex by explicit command, outside default recovery.
 
@@ -17,7 +17,10 @@ Do not enable this with the current firmware. Firmware changes and all gates
 below must pass before unattended use. The owner identifies the Xbox as motherboard revision **1.4**. This is
 owner-reported; the PSU revision and exact solder points remain unverified.
 
-## Parts to procure
+## Historical parts baseline (superseded)
+
+For purchasing, use the [current installer shopping list](../XBOX-POWER-ADAPTER-BUILD-BRIEF.md#parts-to-send-the-installer).
+The older one-relay/sensor BOM below is retained as research, not the selected build.
 
 Exact orderable identifiers below specify the proposed design. Check current
 manufacturer drawings, received markings and stock before ordering; substitutions

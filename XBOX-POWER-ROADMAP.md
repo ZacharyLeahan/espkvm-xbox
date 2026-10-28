@@ -1,7 +1,7 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Roadmap: hard power-cycle recovery after an Xbox hard freeze
 
-Updated 2026-10-27. Status: preferred approach is existing ESP-KVM with two
+Updated 2026-10-28. Status: preferred approach is existing ESP-KVM with two
 isolated button-contact channels. Hardware
 procurement, custom harness verification, firmware work and acceptance remain.
 This plan does not implement firmware or authorize live settings, flashing or AC
@@ -37,7 +37,7 @@ commands to press either POWER or EJECT, including deliberate startup with eithe
 ![Current POWER and EJECT photo wiring diagram](roadmap-assets/xbox-power-relay-setup.png)
 
 The permanent design is **one AC switch, two independent isolated relays and
-professionally installed POWER/EJECT connections (plug-in or soldered)**. The external servo and shared
+professionally soldered POWER/EJECT leads with a four-pin sidewall port**. The external servo and shared
 servo/relay port are retired from the permanent plan.
 
 - [Current photo diagram, wiring notes and parts](XBOX-POWER-RELAY-SETUP.md).
@@ -45,14 +45,17 @@ servo/relay port are retired from the permanent plan.
 - [Detailed firmware audit and recovery design](docs/XBOX-POWER-CONTROL.md).
 - [Earlier installer research and candidate builders](docs/XBOX-POWER-INSTALL.md).
 
+Installer supplies and prices: [five-item shopping list, $30.64 before shipping/tax](XBOX-POWER-ADAPTER-BUILD-BRIEF.md#parts-to-send-the-installer),
+checked 2026-10-28. Includes the preferred sidewall port and loose-connector backup.
+
 ## Hardware decisions
 
 | Area | Proposed decision | Remaining gate |
 | --- | --- | --- |
 | Xbox | Owner-reported revision 1.4, existing Stellar retained | Verify actual front-button connector and POWER continuity |
 | Button actuation | Two Adafruit #4409 non-latching dry-contact relays | Boot/reset, release, separate-supply sequencing and low-current contact tests |
-| Xbox connection | Passive inline adapter or insulated soldered leads; separate POWER/EJECT contacts | Confirm connector family, mirrored mating views and fit before fabrication |
-| Remote disconnect | Two Adafruit #2880 keyed two-wire pairs, labeled by button | Final cable mapping, secure contact termination, case exit route |
+| Xbox connection | Soldered, insulated and strain-relieved leads across both front-board switches | Verify actual switch pads by continuity; preserve factory controls |
+| Remote disconnect | Preferred #5319 four-pin sidewall socket + #5318 plug and round external cable; two #2880 pairs as no-drilling backup | Case clearance/thickness, cable fit, documented four-pin mapping and secure terminations |
 | ESP control | GPIO46 / J1-36 POWER, GPIO47 / J1-37 EJECT, GND / J1-39; two #3894 cables | Verify live pin claims, physical board identity and startup state |
 | Relay power | Independent regulated 5 V, #276/#368 proposed | Availability, polarity, secure ground branch and backfeed test |
 | Xbox AC | Shelly Plug US Gen4 S4PL-00116US; Xbox cord only | Confirm actual firmware/control and mains/load suitability |
@@ -73,9 +76,9 @@ command is suitable; serialize both channels and qualify safe release on both.
 
 ## Xbox adapter commissioning
 
-Send the standalone build brief for a quote. The technician must verify the
-reported J2G2 POWER/EJECT/ground circuits and candidate JST PHD connector fit; the
-research is not a released fabrication pinout. Accept a plug-in adapter or professionally soldered, strain-relieved leads.
+Send the standalone build brief for a quote. The technician must verify actual POWER/EJECT switch pads by continuity;
+the research is not a released solder-pad map. The selected build uses soldered,
+strain-relieved switch leads; it does not depend on identifying the J2G2 connector family.
 Require both disconnect halves, labeled POWER/EJECT leads, insulation/mounting,
 continuity sheet and revision-appropriate installation photos. No owner soldering
 or original-wire cutting is intended. Inquiries have been sent to two Etsy builders; no build agreement is recorded.
@@ -109,14 +112,19 @@ Power draw, front LED state, HDMI lock and ping alone do not prove boot/liveness
 [its photographed parts study](XBOX-POWER-PARTS.md) remain as history. They are
 not the purchasing or installation plan for the dedicated relay setup.
 
-## Accepted alternative: professional soldered installation
+## Selected installation and simplicity goal
 
-The owner also accepts professionally soldered leads across verified POWER and
-EJECT switch contacts, preferably on the front button board. Use
-insulated joints, strain relief and a keyed disconnect; preserve factory controls.
-This can replace the custom plug-in interposer shown in the diagram. Removing
-soldered leads requires desoldering. The relay isolation and separate control
-channels remain the same. See the [build request](XBOX-POWER-ADAPTER-BUILD-BRIEF.md).
+Use professionally soldered front-button leads and a four-pin sidewall socket,
+with a removable external cable to the two relays. Use loose two-pin disconnects
+only if sidewall mounting is impractical. The installer handles the button leads,
+port and external cable; the owner handles relays, their shared supply and ESP.
+The [installer brief](XBOX-POWER-ADAPTER-BUILD-BRIEF.md) lists exact linked parts.
+
+Favor the simplest practical, low-cost arrangement around the existing ESP-KVM,
+which already provides network access and GPIO control. Extra Pico/XERC/IR/servo
+controllers and a custom inline interposer are not part of the selected build.
+Earlier comparisons remain research history; simplicity does not remove the
+need for pulse-safety firmware and hardware acceptance tests.
 
 ## Alternative under evaluation: XERC infrared
 
