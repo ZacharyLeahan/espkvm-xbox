@@ -2,8 +2,9 @@
 # Roadmap: hard power-cycle recovery after an Xbox hard freeze
 
 Updated 2026-10-28. Status: preferred approach is existing ESP-KVM with two
-isolated button-contact channels. Hardware
-procurement, custom harness verification, firmware work and acceptance remain.
+isolated button-contact channels. Installer wire/connector parts were ordered 2026-10-28 for direct shipment to the
+installer in two expected packages (Adafruit and DigiKey). Dispatch/delivery,
+external relay procurement, harness verification, firmware and acceptance remain.
 This plan does not implement firmware or authorize live settings, flashing or AC
 switching. Hardware qualification remains required.
 
@@ -44,6 +45,9 @@ servo/relay port are retired from the permanent plan.
 - [Standalone Xbox adapter build brief to send a technician](XBOX-POWER-ADAPTER-BUILD-BRIEF.md).
 - [Detailed firmware audit and recovery design](docs/XBOX-POWER-CONTROL.md).
 - [Earlier installer research and candidate builders](docs/XBOX-POWER-INSTALL.md).
+
+Installer supplies are **ordered**, with two packages expected directly at the
+installer. [Order contents, receipt totals and assembly roles](XBOX-POWER-ADAPTER-BUILD-BRIEF.md#parts-to-send-the-installer).
 
 Installer supplies and prices: [five-item shopping list, $30.64 before shipping/tax](XBOX-POWER-ADAPTER-BUILD-BRIEF.md#parts-to-send-the-installer),
 checked 2026-10-28. Includes the preferred sidewall port and loose-connector backup.
