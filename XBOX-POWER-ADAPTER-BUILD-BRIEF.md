@@ -79,10 +79,15 @@ Repeat the same arrangement separately for EJECT.
 common inside the Xbox, but please supply two labeled pairs rather than combining
 them. These are button signal/return leads, not a positive/negative power supply.
 
-## Parts to send the installer
+<a id="parts-to-send-the-installer"></a>
+
+## Ordered parts shipping to the installer
 
 USD prices checked 2026-10-28; exclude shipping, tax and installation labor.
-Buy all five rows to provide both the preferred port and the backup option.
+All five rows below were ordered on **2026-10-28**, shipping directly to the
+installer in **two separate orders, with two packages expected**: one from
+Adafruit and one from DigiKey. Do not reorder these parts. Order confirmations
+were checked in Gmail; dispatch and delivery are not yet confirmed.
 
 | Qty | Buy | Price for this quantity | Use |
 | --- | --- | --- | --- |
@@ -92,7 +97,24 @@ Buy all five rows to provide both the preferred port and the backup option.
 | 5 feet | [Alpha Wire 1174C SL013: round four-conductor 22-AWG cable](https://www.digikey.com/en/products/detail/alpha-wire/1174C-SL013/12471121) | $7.29 ($1.458/ft at 5 ft) | External cable; enter order quantity **5** for five feet |
 | 2 sets | [Adafruit #2880: two-pin plug/receptacle cable set](https://www.adafruit.com/product/2880) | $1.50 ($0.75/set) | Backup loose disconnects, one set per button |
 
-**Parts total: $30.64 before shipping/tax.** Prices and availability can change.
+**Parts subtotal ordered: $30.64.** The two order confirmations show:
+
+| Expected package | Ordered contents and installation role | Receipt total |
+| --- | --- | --- |
+| Adafruit | 1x #3892 internal button wire; 1x #5319 sidewall socket; 1x #5318 mating external plug; 2x #2880 backup disconnect sets | $23.35 parts + $7.08 shipping + $2.13 tax = **$32.56** |
+| DigiKey | **5 feet** of Alpha Wire 1174C SL013, the round external cable to solder into #5318 and split into labeled POWER/EJECT pairs at the relay end | $7.29 parts + $4.99 shipping + $0.86 tax = **$13.14** |
+
+**Combined paid order totals: $45.70**, including shipping and tax, excluding labor.
+Adafruit's confirmation specifies one USPS Ground Advantage package; DigiKey's
+confirmation says the order is being processed, with shipment confirmation to
+follow. Two packages are expected, but actual dispatch/arrival remains pending.
+
+Use the parts from both packages together for the preferred soldered/sidewall
+installation. The #2880 sets are a fallback if the port cannot be safely mounted,
+not additional connectors required in series with the sidewall port. On receipt,
+check quantities, connector mating and cable fit before assembly. Return unused
+backup parts with the finished console. No relay boards, relay control cables
+or relay power supply are included in these two orders.
 Installer supplies solder, heat-shrink, labels, mounting and strain-relief materials.
 The owner keeps the relay boards, their control cables and shared 5 V supply.
 

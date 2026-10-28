@@ -102,6 +102,13 @@ watts, LEDs, HDMI lock or ping alone are insufficient.
 
 ## Xbox leads, sidewall port and backup shopping list
 
+**Ordered 2026-10-28:** the Xbox installation parts are shipping directly to the
+installer in two expected packages, Adafruit (wire, socket, plug and backup
+disconnects) and DigiKey (five feet of round external cable). Gmail order
+confirmations verify both purchases; dispatch/delivery is not yet confirmed.
+Combined receipt total is **$45.70 including shipping and tax**, excluding labor.
+These orders cover the installer parts, not the external relays/ESP supplies.
+
 The [installer shopping list](XBOX-POWER-ADAPTER-BUILD-BRIEF.md#parts-to-send-the-installer)
 contains quantities, purchase links and prices checked 2026-10-28: internal
 #3892 wire ($1.95), #5319 panel socket ($9.95), #5318 mating plug ($9.95),
