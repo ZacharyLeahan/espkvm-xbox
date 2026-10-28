@@ -6,8 +6,8 @@ Keep KVM and relay power independent of switched Xbox AC; no extra internal
 microcontroller or IR receiver is required. This remains a proposed installation.
 
 Current build scope: both POWER and EJECT, using independent isolated relay
-channels. Plug-in or professionally soldered, strain-relieved button leads are
-accepted. See the [current build brief](../XBOX-POWER-ADAPTER-BUILD-BRIEF.md) and
+channels. The selected installation uses professionally soldered front-button
+leads and a four-pin sidewall port; loose two-pin disconnects are the fallback. See the [current build brief](../XBOX-POWER-ADAPTER-BUILD-BRIEF.md) and
 [two-channel wiring plan](../XBOX-POWER-RELAY-SETUP.md). The investigation below
 retains the earlier POWER-only baseline; EJECT is available to Codex by explicit command, outside default recovery.
 
@@ -16,7 +16,10 @@ Investigated 2026-10-20 against source commit
 Documentation and proposed design only. No firmware, saved settings, hardware,
 or remote repositories were changed. Installer checklist: [XBOX-POWER-INSTALL.md](XBOX-POWER-INSTALL.md).
 
-## Recommendation and readiness
+## Historical recommendation and readiness (superseded)
+
+The current two-relay soldered/sidewall design and purchasing links are in the
+[setup plan](../XBOX-POWER-RELAY-SETUP.md); the baseline below records earlier analysis.
 
 Reuse the P4 KVM. Proposed first installation: Adafruit **2895 non-latching
 Mini Relay FeatherWing**, driven by GPIO46, with its COM/NO contacts across the

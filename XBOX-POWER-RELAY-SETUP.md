@@ -1,9 +1,17 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Proposed setup: agent-commanded Xbox POWER and EJECT
 
-Preferred approach: reuse the [XWiFi button technique](docs/XBOX-XWIFI-BUTTONS.md)
-in our existing ESP-KVM, with isolated contacts rather than bare GPIO wiring.
-No extra Pico, internal Wi-Fi MCU, XERC or IR emitter is needed.
+Selected build: **professionally soldered POWER/EJECT leads on the Xbox front
+button board, routed to one four-pin sidewall socket and removable cable, then
+two isolated relays controlled by our existing ESP-KVM**. Use two loose two-pin
+disconnects only if the panel port cannot be fitted safely.
+
+The goal is the simplest practical, low-cost setup centered on hardware we
+already own: the ESP-KVM supplies networking and button commands. No additional
+Pico, internal Wi-Fi MCU, XERC or IR emitter is needed. The sidewall connector
+is a cable-management choice; the loose backup has the same electrical function.
+This is a selected design, not a claim of measured lowest cost or completed
+hardware qualification. [Button-technique source review](docs/XBOX-XWIFI-BUTTONS.md).
 
 Both buttons are in scope. Codex can command the ESP to **press POWER** or
 **press EJECT**, including deliberately starting the Xbox with either button.
@@ -23,8 +31,9 @@ Firmware/API support is planned, not implemented or validated by this document.
 | POWER contacts | POWER relay NO/COM -> verified Xbox POWER signal/return |
 | EJECT contacts | EJECT relay NO/COM -> verified Xbox EJECT signal/return |
 
-Use **two #4409 relay boards, two #3894 control cables and two #2880 disconnect
-pairs**. Label identical connectors POWER/EJECT. The builder makes insulated,
+Use **two #4409 relay boards and two #3894 control cables**. Prefer one
+four-pin sidewall socket and matching external cable for the Xbox contact pairs;
+keep two #2880 disconnect sets as the no-drilling backup. Label pairs POWER/EJECT. The builder makes insulated,
 strain-relieved power/ground junctions; do not stack loose sockets on one pin.
 The ESP end uses push-on female sockets. Existing audio GPIO22/53/27 stays wired.
 The proposed GPIOs and header positions require final board/live pin verification.
@@ -44,19 +53,26 @@ standby readiness, then pulse only if fresh evidence says the console is off.
 The ESP supplies no Xbox power and draws no accessory current from Xbox standby.
 A failed standby supply cannot be fixed by repeatedly pressing POWER.
 
-## Xbox installation: either approach is acceptable
+## Selected Xbox installation: soldered leads and sidewall port
 
-- **Plug-in:** pass all original front-panel circuits through an inline adapter,
-  and tap POWER/EJECT separately in parallel with their physical switches.
-- **Professionally soldered:** attach leads across verified POWER/EJECT contacts,
-  preferably on the front button board; insulate joints, add strain relief and
-  route to keyed disconnects. Removal requires desoldering.
+The installer solders two wires across each verified physical switch, preferably
+on the front button board, keeping the factory buttons and LEDs connected.
+Four internal wires terminate at the [#5319 panel socket](https://www.adafruit.com/product/5319).
+The [#5318 mating plug](https://www.adafruit.com/product/5318) connects a removable
+four-conductor cable, whose labeled POWER and EJECT pairs go to their respective
+relay NO/COM terminals. The owner connects the relays and ESP; the installer
+assembles both the Xbox-side port and external button cable.
 
-Both preserve factory buttons and LEDs. The [short installer build request](XBOX-POWER-ADAPTER-BUILD-BRIEF.md)
-includes the [historical Xecuter adapter reference](https://connortumbleson.com/uploads/2024/03/x3_ce_v10_v16.pdf#page=12).
-Its photo shows topology, not a verified new harness or solder map. The reported
-J2G2 pinout and candidate JST family still require physical fit, orientation and
-continuity checks. Verify each button independently; never join their signals.
+Check case clearance before drilling. If mounting is impractical, use two
+[#2880 loose disconnect sets](https://www.adafruit.com/product/2880) and a protected,
+strain-relieved cable exit. Exact solder pads and four-pin assignment require
+continuity verification and an as-built photo. No supply voltage goes through
+the port. Removal of soldered leads requires desoldering.
+
+The [installer brief and linked shopping list](XBOX-POWER-ADAPTER-BUILD-BRIEF.md)
+is the current build request. The historical Xecuter inline adapter, servo,
+Pico and XERC/IR investigations remain background alternatives, not purchases
+or parallel installation tasks.
 
 ## Agent commands and freeze recovery
 
@@ -84,6 +100,20 @@ watts, LEDs, HDMI lock or ping alone are insufficient.
 
 [Detailed investigation and implementation plan](docs/XBOX-POWER-CONTROL.md).
 
+## Xbox leads, sidewall port and backup shopping list
+
+The [installer shopping list](XBOX-POWER-ADAPTER-BUILD-BRIEF.md#parts-to-send-the-installer)
+contains quantities, purchase links and prices checked 2026-10-28: internal
+#3892 wire ($1.95), #5319 panel socket ($9.95), #5318 mating plug ($9.95),
+five feet of Alpha Wire 1174C SL013 ($7.29), and two #2880 backup sets ($1.50).
+**Total $30.64 before shipping/tax and labor.** The installer assembles the
+external cable; the owner connects its two labeled pairs to the relay NO/COM
+screw terminals. Port clearance and actual cable fit remain hardware checks.
+
+The diagram shows the selected soldered/sidewall route and identifies loose
+disconnects as the fallback. Supplier photos show the relays and backup connectors;
+the sidewall route is labeled schematically, not pictured as a finished assembly.
+
 ## Parts and photo sources
 
 | Item | Exact proposed product / source |
@@ -91,12 +121,14 @@ watts, LEDs, HDMI lock or ping alone are insufficient.
 | ESP board | Existing P4X; [local reference render](docs/esp32-p4x-function-ev-board-isometric_v1.6.png) |
 | Control cables (2) | [Adafruit #3894](https://www.adafruit.com/product/3894) |
 | Relays (2) | [Adafruit #4409](https://www.adafruit.com/product/4409) |
-| Contact disconnects (2 pairs) | [Adafruit #2880](https://www.adafruit.com/product/2880) |
+| Backup contact disconnects (2 pairs) | [Adafruit #2880](https://www.adafruit.com/product/2880) |
 | External supply | [Adafruit #276](https://www.adafruit.com/product/276), proposed pending availability |
 | DC jack termination | [Adafruit #368](https://www.adafruit.com/product/368) |
 | AC switch | [Shelly Plug US Gen4](https://us.shelly.com/products/shelly-plug-us-gen4-white), S4PL-00116US |
 | Historical adapter picture | [X3 CE guide page 12, photo 5](https://connortumbleson.com/uploads/2024/03/x3_ce_v10_v16.pdf#page=12) |
-| Xbox interposer | Custom; connector parts and as-built wiring require verification |
+| Xbox internal wire | [Adafruit #3892](https://www.adafruit.com/product/3892), four-wire 26-AWG ribbon |
+| Sidewall socket / plug | [Adafruit #5319](https://www.adafruit.com/product/5319) / [#5318](https://www.adafruit.com/product/5318) |
+| External button cable | [Alpha Wire 1174C SL013](https://www.digikey.com/en/products/detail/alpha-wire/1174C-SL013/12471121), five feet |
 
 Real supplier photographs remain credited to their respective owners. The ESP
 image is a reference render. The Xbox image is a historical installation crop.

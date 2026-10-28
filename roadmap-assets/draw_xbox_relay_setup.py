@@ -38,13 +38,19 @@ lines(65,1140,['#276 supply + #368 jack, proposed','Insulated +5 V / GND split t
 arr([(325,880),(325,850),(935,850),(935,825)],'#d43a40')
 arr([(935,850),(1515,850),(1515,825)],'#d43a40')
 for x,label in [(690,'POWER'),(1270,'EJECT')]:
- box(x,880,490,370,f'6. {label} contact disconnect','#ecf8f1')
+ box(x,880,490,370,f'6. {label} contact pair','#ecf8f1')
  pic('roadmap-assets/product-photos/adafruit-2880.jpg',x+20,945,450,160)
- lines(x+25,1130,['#2880 keyed pair, one per button','NO → button signal; COM → return','Label both halves; NC stays unused.'],23)
+ lines(x+25,1130,['Photo: #2880 BACKUP disconnect','Preferred: pair through 4-pin port','NO / COM only; NC stays unused.'],23)
  arr([(x+245,825),(x+245,880)],'#138467')
 box(40,1310,1720,400,'7. Installer connects both Xbox buttons')
-pic('roadmap-assets/x3-power-eject-adapter-closeup.png',60,1370,420,280)
-lines(510,1380,['Option A: plug-in pass-through adapter, like historical Xecuter X3 (photo).','Option B: professional soldered leads on verified front-button contacts.','Both: preserve original buttons/LEDs; insulate joints and add strain relief.','','POWER pair → across POWER switch     EJECT pair → across EJECT switch','Verify contacts, connector fit/orientation and each button independently.','No direct ESP GPIO, 5 V or control-ground wire to Xbox button contacts.'],25)
+lines(65,1380,['SELECTED: solder two wires across POWER and two across EJECT on front button board.',
+                  'Secure / insulate leads → #5319 sidewall socket <-> #5318 plug → round 4-wire cable.',
+                  'External cable splits into POWER pair → POWER relay NO/COM; EJECT pair → EJECT relay NO/COM.',
+                  'Installer assembles port + cable; owner connects relays / shared supply / existing ESP-KVM.',
+                  '',
+                  'BACKUP if port will not fit: two #2880 loose disconnects and a protected cable exit.',
+                  'Keep factory buttons / LEDs. Verify actual pads and document connector orientation.',
+                  'Button contacts only: no ESP GPIO, control ground or 5 V goes through the sidewall port.'],25)
 arr([(935,1250),(935,1310)],'#138467');arr([(1515,1250),(1515,1310)],'#138467')
 box(40,1765,1720,215,'8. Hard-freeze recovery: Shelly switches Xbox AC only','#eaf3ff')
 pic('roadmap-assets/product-photos/shelly-us-gen4.jpg',60,1820,190,140)
@@ -55,5 +61,5 @@ lines(65,2080,['Restored AC → Xbox PSU → standby-powered button controller �
                'Verify standby readiness before pressing; a failed standby supply means stop.'],26)
 box(40,2220,1720,100,'Agent commands','#fff4e8')
 txt(65,2270,'Codex can press either button. Default recovery uses POWER; qualify Stellar eject-start separately.',25)
-txt(40,2350,'Photos: Adafruit / Shelly / historical X3 guide p.12; ESP reference: Espressif. Not to scale. No verified Xbox solder-pad map.',21)
+txt(40,2350,'Photos: Adafruit / Shelly; ESP reference: Espressif. Sidewall shown in text; not to scale. Solder pads require verification.',21)
 im.save(root/'roadmap-assets/xbox-power-relay-setup.png')
