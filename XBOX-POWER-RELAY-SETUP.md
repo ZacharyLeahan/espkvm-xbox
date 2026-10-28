@@ -107,3 +107,10 @@ Original product-image URLs are recorded in
 [Diagram layout source](roadmap-assets/draw_xbox_relay_setup.py) ·
 [Roadmap](XBOX-POWER-ROADMAP.md) ·
 [Previous interchangeable concept, historical](XBOX-POWER-PARTS.md)
+
+## Live configuration validation
+
+[2026-10-27 read-only validation and remaining hardware tests](docs/XBOX-BUTTON-VALIDATION-2026-10-27.md):
+the running KVM saves button GPIO46/47 with ATX disabled, and reports neither
+in its fixed peripheral reservations. Pin choice is supported; electrical behavior,
+physical switch points and complete recovery still require bench qualification.

@@ -133,3 +133,10 @@ The [XWiFi-to-ESP-KVM investigation](docs/XBOX-XWIFI-BUTTONS.md) explains how
 our independently powered KVM and two isolated contact channels can emulate
 POWER/EJECT after Xbox standby returns. It reuses the button technique, not the
 EEPROM application; no separate Xbox-powered Wi-Fi MCU is required.
+
+## Live configuration validation
+
+[2026-10-27 read-only validation and remaining hardware tests](docs/XBOX-BUTTON-VALIDATION-2026-10-27.md):
+the running KVM saves button GPIO46/47 with ATX disabled, and reports neither
+in its fixed peripheral reservations. Pin choice is supported; electrical behavior,
+physical switch points and complete recovery still require bench qualification.
