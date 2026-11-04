@@ -20,6 +20,15 @@ Firmware/API support is planned, not implemented or validated by this document.
 
 ![Two-channel POWER and EJECT wiring with real product photos](roadmap-assets/xbox-power-relay-setup.png)
 
+## Exact ESP-KVM board
+
+The existing KVM uses an **Espressif ESP32-P4X-Function-EV-Board**, based on the
+ESP32-P4 chip. See [Espressif's official board guide, photos and J1 pinout](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4x-function-ev-board/user_guide.html).
+The J1 physical pin numbers below refer to this board, not a generic ESP32 header.
+Local rig notes identify PCB v1.6 and silicon revision 3.2; these are recorded
+rig details, not established solely by the product name or reference render.
+Confirm the actual board markings and chip diagnostics before final wiring.
+
 ## Connections and quantities
 
 | Connection | Planned wiring |
@@ -125,7 +134,7 @@ the sidewall route is labeled schematically, not pictured as a finished assembly
 
 | Item | Exact proposed product / source |
 | --- | --- |
-| ESP board | Existing P4X; [local reference render](docs/esp32-p4x-function-ev-board-isometric_v1.6.png) |
+| ESP board | Existing [Espressif ESP32-P4X-Function-EV-Board](https://docs.espressif.com/projects/esp-dev-kits/en/latest/esp32p4/esp32-p4x-function-ev-board/user_guide.html); [local reference render](docs/esp32-p4x-function-ev-board-isometric_v1.6.png) |
 | Control cables (2) | [Adafruit #3894](https://www.adafruit.com/product/3894) |
 | Relays (2) | [Adafruit #4409](https://www.adafruit.com/product/4409) |
 | Backup contact disconnects (2 pairs) | [Adafruit #2880](https://www.adafruit.com/product/2880) |
