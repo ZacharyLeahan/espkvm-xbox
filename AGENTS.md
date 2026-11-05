@@ -161,3 +161,18 @@ docs/             HARDWARE-NOTES.md (measured facts), PORTING.md
 - Test on real hardware where it matters (video, HID, TLS, virtual media). The
   device is attached to this machine; `curl -k https://espkvm.local/` reaches it.
 - For the console, `npm run typecheck` and a look in a browser.
+
+## Fixed Xbox player wiring
+
+- Standing operator rule: main ESP **DEVICE USB always connects to physical
+  Xbox P1**, never P2-P4. Assume P1 whenever connected; do not ask the operator
+  to rediscover the socket. Optional Wi-Fi S3 receivers belong to P2-P4.
+- Current firmware modes remain exclusive: direct mode drives P1 only;
+  `CONFIG_KVM_XBOX_S3_PLAYER1=y` uses four S3 receivers and disables DEVICE USB.
+  Mixed direct P1 plus Wi-Fi P2-P4 is intended, not yet implemented/validated.
+- The wiring rule supplies the P1 assignment; USB telemetry supplies live
+  connection/transfer state. Neither implies that a game handled the input.
+- For other repositories and test-loop details, keep
+  [the shared entrypoint](docs/AGENT-XBOX-TESTING.md) authoritative. Activate
+  `/stream` before reviewing MJPEG stills: idle snapshots can be old even when
+  raw capture counters advance. Do not diagnose a freeze from those stills.

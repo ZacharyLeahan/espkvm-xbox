@@ -58,14 +58,19 @@ The tested rig uses an **ESP32-P4 Function EV** (rev 3.2, C6 Wi-Fi),
 
 - **Video:** Xbox HDMI → C790 → ESP **MIPI CAMERA**; optional **MIPI DISPLAY** → LCD.
 - **Audio:** C790 I2S → ESP headers using the [verified wiring](docs/HDMI-AUDIO.md#header-cross-check-2026-10-16).
-- **Input:** Xbox controller port → USB adapter → USB data cable → ESP **DEVICE USB**.
+- **Input:** Xbox **player 1** port → USB adapter → USB data cable → ESP **DEVICE USB**.
 - **Power/flashing:** separate **USB-Serial-JTAG** connection. Power off before handling ribbons.
 
 The main board, bridge, and LCD cost $220.03. Documented spend including four
 controller adapters and four S3-Zero boards is **$274.85**;
 [receipt details and exclusions](docs/FORK-HISTORY.md#hardware-purchases).
 
-**All four controllers now route over Wi-Fi.** Each Waveshare ESP32-S3-Zero emulates one Xbox
+**Standing wiring rule: DEVICE USB is always player 1**, never P2-P4. Optional
+Wi-Fi S3 adapters are intended for players 2, 3 and 4. The current direct build
+supports P1 only; simultaneous direct P1 plus Wi-Fi P2-P4 still needs mixed
+routing support. See the [agent hardware/test-loop entrypoint](docs/AGENT-XBOX-TESTING.md#fixed-controller-wiring-and-current-test-loop).
+
+**Previously validated all-S3 configuration:** Each Waveshare ESP32-S3-Zero emulates one Xbox
 controller, receiving full-resolution state from the main KVM over home Wi-Fi.
 For player 1, all buttons, trigger pressure, both stick axes and circular sweeps were checked
 in Xbox Controller Tool: [164-state hardware validation](docs/S3-PLAYER1-VALIDATION.md).
@@ -74,6 +79,11 @@ then controlled separate characters and simultaneous jumps in a real
 Guilty Gear Isuka four-player match:
 [four-player validation and limits](docs/S3-FOUR-PLAYER-VALIDATION.md).
 [Build and pairing instructions](s3-dongle/README.md) cover all four boards.
+
+## For coding agents in other game repositories
+
+Start with the [shared hardware and test-loop entrypoint](docs/AGENT-XBOX-TESTING.md).
+Keep game build/deploy instructions in the game repository.
 
 ## Build and use
 

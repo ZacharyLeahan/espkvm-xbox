@@ -27,12 +27,28 @@ Our setup uses an **ESP32-P4 Function EV board** (P4 rev 3.2, C6 Wi-Fi), **Geekw
 
 - **Video:** Xbox HDMI → C790 → ESP **MIPI CAMERA**. Optional ESP **MIPI DISPLAY** → LCD. Power off before handling ribbons and check contact orientation.
 - **Audio:** C790 I2S → four ESP header connections. Use the [verified Function EV wiring and audio settings](HDMI-AUDIO.md#header-cross-check-2026-10-16).
-- **Controller:** Xbox controller port → female USB adapter → USB-A-to-USB-C data cable → ESP **DEVICE USB**. The firmware provides XID emulation; the adapter is just a cable.
+- **Controller:** Xbox **player 1** controller port → female USB adapter → USB-A-to-USB-C data cable → ESP **DEVICE USB**. The firmware provides XID emulation; the adapter is just a cable.
 - **Power/flashing:** use **USB-Serial-JTAG**. This is separate from the controller connection.
 
 The Waveshare screen works in this fork but is not a vendor-supported configuration. LCD setup and investigation are in [DSI-PREVIEW.md](DSI-PREVIEW.md).
 
-## Planned: four-player wireless homebrew testing
+## Standing player assignment and firmware modes
+
+DEVICE USB is always wired to physical Xbox P1 by operator convention; never
+ask which port or assume it can be on P2-P4. Optional Wi-Fi S3 adapters are
+intended for P2-P4. This fixed assignment does not depend on automatic USB port
+detection. Live enumeration and host completion counts still determine whether
+the connection is operational.
+
+The currently installed direct build supports P1 only. The existing all-S3
+build disables direct DEVICE USB and routes all four players over Wi-Fi. Mixed
+direct P1 plus Wi-Fi P2-P4 is the intended layout, but requires implementation
+and validation before claiming simultaneous multiplayer support in direct mode.
+Direct P1 navigated XBMC and opened Controller Tool on 2026-11-04; the LCD showed
+USB ON and the operator confirmed advancing Xbox report completions. Follow
+[the shared test loop and fresh-capture precautions](AGENT-XBOX-TESTING.md#fixed-controller-wiring-and-current-test-loop).
+
+## Previously validated four-S3 homebrew testing
 
 The next unlock is **agents in the loop for all four players on the real Xbox**:
 exercise multiplayer interactions in homebrew games, reproduce simultaneous

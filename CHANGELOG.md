@@ -7,6 +7,11 @@ bumps the patch).
 
 ## [Unreleased]
 
+### Documentation
+
+- Record fixed DEVICE USB player-one wiring, intended Wi-Fi P2-P4, current
+  firmware limits and fresh-video test-loop guidance for other game repos.
+
 ### Added
 
 - Add compact P1-P4 connection/activity indicators to the web console and LCD,
