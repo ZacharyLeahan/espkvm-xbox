@@ -32,7 +32,7 @@ static esp_err_t status_get(httpd_req_t *r)
     usb_xbox_diagnostics(&submitted,&consumed,&opened);
     usb_xbox_history(held,lines,timing);
     s3_network_status(network,sizeof(network));
-    snprintf(s,sizeof(s),"Firmware 0.2.1 | USB host: %s | suspended: %s\n%s\nXID open: %s | USB submitted: %lu | host consumed: %lu | held: %s",tud_mounted()?"configured":"not configured",tud_suspended()?"yes":"no",network,opened?"yes":"no",(unsigned long)submitted,(unsigned long)consumed,held);
+    snprintf(s,sizeof(s),"Firmware 0.2.2 | USB host: %s | suspended: %s\n%s\nXID open: %s | USB submitted: %lu | host consumed: %lu | held: %s",tud_mounted()?"configured":"not configured",tud_suspended()?"yes":"no",network,opened?"yes":"no",(unsigned long)submitted,(unsigned long)consumed,held);
     return httpd_resp_send(r,s,HTTPD_RESP_USE_STRLEN);
 }
 static esp_err_t report_post(httpd_req_t *r)
@@ -83,5 +83,5 @@ void app_main(void)
         {.uri="/report",.method=HTTP_POST,.handler=report_post},
     };
     for(unsigned i=0;i<sizeof(routes)/sizeof(routes[0]);i++) ESP_ERROR_CHECK(httpd_register_uri_handler(server,&routes[i]));
-    printf("READY: %s http://192.168.4.1 firmware 0.2.1\n",wifi.ap.ssid);
+    printf("READY: %s http://192.168.4.1 firmware 0.2.2\n",wifi.ap.ssid);
 }

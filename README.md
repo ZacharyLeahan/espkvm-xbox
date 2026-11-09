@@ -133,3 +133,10 @@ Included software and protocol references are distinguished below. Original attr
 | [espressif/esp-idf](https://github.com/espressif/esp-idf), [esp-hosted-mcu](https://github.com/espressif/esp-hosted-mcu), and [esp-bsp](https://github.com/espressif/esp-bsp) | Platform, C6 connectivity, and GT911 touch references; [esp-hosted-mcu issue #241](https://github.com/espressif/esp-hosted-mcu/issues/241) informed the BLE pairing crypto fix. |
 
 Fork work combines these foundations for Xbox: capture/LCD tuning, panel bring-up, touchscreen recording and overlays, XID output, Bluetooth translation, input history, and remote HDMI audio. Detailed provenance and tests are in the [controller notes](docs/XBOX-REMOTE-CONTROLLER.md), [LCD investigation](docs/DSI-PREVIEW.md), [audio notes](docs/HDMI-AUDIO.md), and [upstream review ledger](docs/UPSTREAM-REVIEW.md).
+
+## Automatic Xbox player-one handoff
+
+With `KVM_XBOX_S3_PLAYER1` and `KVM_XBOX_DIRECT_PLAYER1`, main DEVICE USB
+(always wired to Xbox P1) takes priority when configured; otherwise P1 uses its
+paired S3. Wi-Fi P2-P4 retain their assignments. The overlay changes P1
+DIRECT/WIFI automatically. See [configuration and hardware verification](docs/CONTROLLER-HANDOFF.md).

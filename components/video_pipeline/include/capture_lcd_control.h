@@ -33,6 +33,8 @@ const char *capture_lcd_bt_status(void);
 
 typedef struct {
     bool enabled;
+    bool direct_usb, wifi_enabled;
+    bool paired[4];
     unsigned connection[4];
     bool active[4],stale_beacon[4],consuming[4];
     char ip[4][16],held[4][48];

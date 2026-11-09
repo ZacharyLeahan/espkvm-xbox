@@ -1,0 +1,3 @@
+# SPDX-License-Identifier: Apache-2.0
+# Apply after s3_route.defaults; compile-only, never flash its test pairing key.
+CONFIG_KVM_XBOX_DIRECT_PLAYER1=y

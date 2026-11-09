@@ -10,6 +10,7 @@
 #endif
 #include "xbox_report.h"
 #include "xbox_input_history.h"
+#include "xbox_usb_recovery.h"
 #include "device/usbd_pvt.h"
 #include "tinyusb.h"
 #include "tinyusb_default_config.h"
@@ -28,6 +29,8 @@ static QueueHandle_t s_queue;
 static QueueHandle_t s_player_queues[3];
 static uint8_t s_player_states[4][20]={{0,20},{0,20},{0,20},{0,20}};
 static int64_t s_player_deadlines[3];
+static uint8_t s_p1_snapshot[20]={0,20};
+static int64_t s_p1_deadline;
 #endif
 static SemaphoreHandle_t s_input_mu;
 static int64_t s_local_until;
@@ -37,10 +40,20 @@ static bool s_open;
 static int64_t s_deadline;
 static uint8_t s_state[20] = {0,20};
 /* P4 USB DMA cache maintenance requires separate, whole cache-line buffers. */
+#if !CONFIG_KVM_XBOX_S3_PLAYER1 || CONFIG_KVM_XBOX_DIRECT_PLAYER1
 CFG_TUSB_MEM_SECTION static uint8_t s_tx[64];
+#endif
 CFG_TUSB_MEM_SECTION static uint8_t s_control[64];
 CFG_TUSB_MEM_SECTION static uint8_t s_out[64];
 static uint32_t s_sent;
+static portMUX_TYPE s_status_lock=portMUX_INITIALIZER_UNLOCKED;
+static usb_xbox_status_t s_usb_status;
+void usb_xbox_status(usb_xbox_status_t *out)
+{
+    portENTER_CRITICAL(&s_status_lock);
+    *out=s_usb_status;
+    portEXIT_CRITICAL(&s_status_lock);
+}
 static portMUX_TYPE s_history_lock=portMUX_INITIALIZER_UNLOCKED;
 static xbox_input_history_t s_history;
 void usb_xbox_history(char held[48],char lines[3][48],char timing[48])
@@ -166,11 +179,16 @@ static void xid_reset(uint8_t port)
 {
     s_port = port;
     s_open = false;
+    portENTER_CRITICAL(&s_status_lock);
+    memset(&s_usb_status,0,sizeof(s_usb_status));
+    portEXIT_CRITICAL(&s_status_lock);
     memset(s_state, 0, sizeof(s_state));
     s_state[1] = 20;
     s_deadline = 0;
     observe_input(s_state);
+#if !CONFIG_KVM_XBOX_S3_PLAYER1
     if (s_queue) xQueueReset(s_queue);
+#endif
 }
 static void xid_init(void) { xid_reset(0); }
 static bool xid_deinit(void) { xid_reset(0); return true; }
@@ -185,7 +203,8 @@ static uint16_t xid_open(uint8_t port, tusb_desc_interface_t const *itf, uint16_
     s_port = port;
     s_open = true;
     if (!usbd_edpt_xfer(port, 0x02, s_out, 32, false)) return 0;
-    ESP_LOGI(TAG, "XID interface opened on USB port %u", port);
+    ESP_LOGI(TAG, "XID interface opened on ESP USB controller %u; host-assigned USB address %u; physical Xbox port unknown",
+             port, (unsigned)USB_DWC_HS.dcfg_reg.devaddr);
     return 23;
 }
 
@@ -193,8 +212,8 @@ static bool xid_control(uint8_t port, uint8_t stage, tusb_control_request_t cons
 {
     if (stage != CONTROL_STAGE_SETUP) return true;
     if (r->wIndex != 0) return false;
-    ESP_LOGI(TAG, "control %02x/%02x value=%04x length=%u", r->bmRequestType,
-             r->bRequest, r->wValue, r->wLength);
+    ESP_LOGI(TAG, "control %02x/%02x value=%04x index=%04x length=%u", r->bmRequestType,
+             r->bRequest, r->wValue, r->wIndex, r->wLength);
     if (r->bmRequestType == 0xc1 && r->bRequest == 6 && r->wValue == 0x4200)
         return tud_control_xfer(port,r,(void *)xid_descriptor,sizeof(xid_descriptor));
     if (r->bmRequestType == 0xc1 && r->bRequest == 1 &&
@@ -221,6 +240,12 @@ static bool xid_xfer(uint8_t port,uint8_t ep,xfer_result_t result,uint32_t bytes
 {
     (void)bytes;
     if (ep == 0x02 && s_open) return usbd_edpt_xfer(port,ep,s_out,32,false);
+    if (ep == 0x81 && result == XFER_RESULT_SUCCESS) {
+        portENTER_CRITICAL(&s_status_lock);
+        s_usb_status.consumed++;
+        s_usb_status.completion_at=esp_timer_get_time();
+        portEXIT_CRITICAL(&s_status_lock);
+    }
     if (ep == 0x81 && result == XFER_RESULT_SUCCESS && ++s_sent == 1)
         ESP_LOGI(TAG,"Xbox host consumed first controller report");
     return true;
@@ -232,15 +257,16 @@ static const usbd_class_driver_t driver = {
 usbd_class_driver_t const *usbd_app_driver_get_cb(uint8_t *count)
 { *count=1; return &driver; }
 
-/* All endpoint operations and mutable USB state stay on TinyUSB's task.
- * Keep reports ordered (including immediate press/release pairs). */
-static void xid_pump(void *unused)
-{
-    (void)unused;
+/* The input worker owns logical player state independently of cable presence.
+ * TinyUSB reads a locked P1 snapshot; disconnect/reset cannot drain Wi-Fi input. */
 #if CONFIG_KVM_XBOX_S3_PLAYER1
-    if (xQueueReceive(s_queue,s_state,0)==pdTRUE) s_deadline=esp_timer_get_time()+500000;
-    if (esp_timer_get_time()>=s_deadline) { memset(s_state,0,20); s_state[1]=20; }
-    memcpy(s_player_states[0],s_state,20);
+static void xid_s3_pump(void)
+{
+    if (xQueueReceive(s_queue,s_player_states[0],0)==pdTRUE)s_p1_deadline=esp_timer_get_time()+500000;
+    if (esp_timer_get_time()>=s_p1_deadline) { memset(s_player_states[0],0,20);s_player_states[0][1]=20; }
+    portENTER_CRITICAL(&s_status_lock);
+    memcpy(s_p1_snapshot,s_player_states[0],20);
+    portEXIT_CRITICAL(&s_status_lock);
     for(unsigned p=0;p<3;p++) {
         if(xQueueReceive(s_player_queues[p],s_player_states[p+1],0)==pdTRUE)
             s_player_deadlines[p]=esp_timer_get_time()+500000;
@@ -249,38 +275,80 @@ static void xid_pump(void *unused)
         }
     }
     xbox_s3_route_tick(s_player_states);
-    observe_input(s_state);
-    return;
+    observe_input(s_player_states[0]);
+}
 #endif
-    if (!s_open || !tud_mounted() || tud_suspended()) {
-        usb_xbox_release();
+
+#if !CONFIG_KVM_XBOX_S3_PLAYER1 || CONFIG_KVM_XBOX_DIRECT_PLAYER1
+/* All endpoint operations and mutable USB state stay on TinyUSB's task.
+ * Keep reports ordered (including immediate press/release pairs). */
+static void xid_pump(void *unused)
+{
+    (void)unused;
+    static xbox_usb_recovery_t recovery;
+    unsigned action=xbox_usb_recovery_tick(&recovery,esp_timer_get_time(),
+        s_open && tud_mounted(),tud_suspended());
+    if(action==XBOX_USB_DETACH) { ESP_LOGW(TAG,"USB not configured; retrying enumeration");tud_disconnect();return; }
+    if(action==XBOX_USB_ATTACH) { tud_connect();return; }
+    if(recovery.attach_at)return;
+    bool connected=s_open && tud_mounted() && !tud_suspended();
+    portENTER_CRITICAL(&s_status_lock);
+    s_usb_status.connected=connected;
+    s_usb_status.bus_alive=tud_connected();
+    portEXIT_CRITICAL(&s_status_lock);
+    if (!connected) {
+#if !CONFIG_KVM_XBOX_S3_PLAYER1
+        if(xSemaphoreTake(s_input_mu,pdMS_TO_TICKS(10))==pdTRUE) {
+            queue_release();
+            xSemaphoreGive(s_input_mu);
+        }
+#endif
         memset(s_state,0,20); s_state[1]=20;
+#if !CONFIG_KVM_XBOX_S3_PLAYER1
         observe_input(s_state);
+#endif
         return;
     }
     if (!usbd_edpt_claim(s_port,0x81)) return;
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+    portENTER_CRITICAL(&s_status_lock);
+    memcpy(s_state,s_p1_snapshot,20);
+    portEXIT_CRITICAL(&s_status_lock);
+#else
     if (xQueueReceive(s_queue,s_state,0) == pdTRUE) s_deadline=esp_timer_get_time()+500000;
     if (esp_timer_get_time() >= s_deadline) {
         memset(s_state,0,20); s_state[1]=20;
     }
+#endif
     memcpy(s_tx,s_state,20);
     if (!usbd_edpt_xfer(s_port,0x81,s_tx,20,false)) usbd_edpt_release(s_port,0x81);
-    else observe_input(s_state);
+    else {
+        portENTER_CRITICAL(&s_status_lock);
+        s_usb_status.submitted++;
+        portEXIT_CRITICAL(&s_status_lock);
+        observe_input(s_state);
+    }
 }
+#endif
 static void xid_worker(void *arg)
 {
     (void)arg;
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+    int64_t next_network=0;
+#endif
     for (;;) {
 #if CONFIG_KVM_XBOX_S3_PLAYER1
-        xid_pump(NULL);
-#else
-        usbd_defer_func(xid_pump,NULL,false);
+        int64_t now=esp_timer_get_time();
+        if(now>=next_network) {
+            xid_s3_pump();next_network=now+20000;
+        }
 #endif
-#if CONFIG_KVM_XBOX_S3_PLAYER1
+#if !CONFIG_KVM_XBOX_S3_PLAYER1 || CONFIG_KVM_XBOX_DIRECT_PLAYER1
+        usbd_defer_func(xid_pump,NULL,false);
+        vTaskDelay(pdMS_TO_TICKS(10));
+#else
         /* Keep queued REST press/release edges a full S3 USB poll apart. */
         vTaskDelay(pdMS_TO_TICKS(20));
-#else
-        vTaskDelay(pdMS_TO_TICKS(10));
 #endif
     }
 }
@@ -301,8 +369,10 @@ esp_err_t usb_xbox_init(void)
     }
     err=xbox_s3_route_init();
     if(err!=ESP_OK)return err;
+#if !CONFIG_KVM_XBOX_DIRECT_PLAYER1
     if(xTaskCreate(xid_worker,"xbox_s3",6144,NULL,8,NULL)!=pdPASS)return ESP_ERR_NO_MEM;
     return ESP_OK;
+#endif
 #endif
     tinyusb_config_t cfg=TINYUSB_DEFAULT_CONFIG();
     cfg.descriptor.device=&device;
@@ -318,7 +388,12 @@ esp_err_t usb_xbox_init(void)
 #endif
     vTaskDelay(pdMS_TO_TICKS(1000));
     tud_connect();
-    if (xTaskCreate(xid_worker,"xid_input",3072,NULL,8,NULL) != pdPASS) return ESP_ERR_NO_MEM;
+#if CONFIG_KVM_XBOX_S3_PLAYER1
+    const unsigned worker_stack=6144;
+#else
+    const unsigned worker_stack=3072;
+#endif
+    if (xTaskCreate(xid_worker,"xid_input",worker_stack,NULL,8,NULL) != pdPASS) return ESP_ERR_NO_MEM;
     ESP_LOGI(TAG,"Experimental Xbox XID mode; inputs neutral, stale keys release after 500 ms");
     return ESP_OK;
 }

@@ -69,6 +69,8 @@ jobs:
           /tmp/test_xbox_report
           cc -std=c11 -Wall -Wextra -Werror -I components/kvm_hid/include tests/test_controller_status.c -o /tmp/test_controller_status
           /tmp/test_controller_status
+          cc -std=c11 -Wall -Wextra -Werror -I components/kvm_hid/include tests/test_xbox_usb_recovery.c -o /tmp/test_xbox_usb_recovery
+          /tmp/test_xbox_usb_recovery
           cc -std=c11 -Wall -Wextra -Werror -I components/video_pipeline -I components/video_pipeline/include tests/test_lcd_players.c -lm -o /tmp/test_lcd_players
           /tmp/test_lcd_players
       - run: python3 s3-dongle/tools/test_configure.py
@@ -96,6 +98,24 @@ jobs:
             idf.py -B build.s3-route-ci
             -D SDKCONFIG=build.s3-route-ci/sdkconfig
             -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;boards/funcev_p4.defaults;boards/funcev_xbox.defaults;tests/s3_route.defaults"
+            build
+
+  xbox-mixed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - name: Build P4 direct P1 with Wi-Fi P2-P4
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v6.1
+          target: esp32p4
+          command: >-
+            git config --global --add safe.directory "$PWD" &&
+            idf.py -B build.mixed-route-ci
+            -D SDKCONFIG=build.mixed-route-ci/sdkconfig
+            -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;boards/funcev_p4.defaults;boards/funcev_xbox.defaults;boards/funcev_dsi_live.defaults;tests/s3_route.defaults;tests/mixed_route.defaults"
             build
 
   # The console's own logic: the fake machine the demo runs on, the settings

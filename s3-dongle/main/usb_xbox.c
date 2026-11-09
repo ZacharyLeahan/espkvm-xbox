@@ -8,6 +8,7 @@
 #include <stdatomic.h>
 #include "xbox_report.h"
 #include "xbox_input_history.h"
+#include "xbox_usb_recovery.h"
 #include "device/usbd_pvt.h"
 #include "tinyusb.h"
 #include "tinyusb_default_config.h"
@@ -151,7 +152,7 @@ static uint16_t xid_open(uint8_t port, tusb_desc_interface_t const *itf, uint16_
     s_port = port;
     s_open = true;
     if (!usbd_edpt_xfer(port, 0x02, s_out, 32, false)) return 0;
-    ESP_LOGI(TAG, "XID interface opened on USB port %u", port);
+    ESP_LOGI(TAG, "XID interface opened on ESP USB controller %u; physical Xbox port unknown", port);
     return 23;
 }
 
@@ -203,6 +204,12 @@ usbd_class_driver_t const *usbd_app_driver_get_cb(uint8_t *count)
 static void xid_pump(void *unused)
 {
     (void)unused;
+    static xbox_usb_recovery_t recovery;
+    unsigned action=xbox_usb_recovery_tick(&recovery,esp_timer_get_time(),
+        s_open && tud_mounted(),tud_suspended());
+    if(action==XBOX_USB_DETACH) { ESP_LOGW(TAG,"USB not configured; retrying enumeration");tud_disconnect();return; }
+    if(action==XBOX_USB_ATTACH) { tud_connect();return; }
+    if(recovery.attach_at)return;
     if (!s_open || !tud_mounted() || tud_suspended()) {
         usb_xbox_release();
         memset(s_state,0,20); s_state[1]=20;
