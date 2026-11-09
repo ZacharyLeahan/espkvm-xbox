@@ -41,6 +41,7 @@ idf_component_register(
         esp_psram
         esp_mm
         esp_timer
+        esp_netif
         nvs_flash
 )
 

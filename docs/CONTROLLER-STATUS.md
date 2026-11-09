@@ -20,6 +20,21 @@ success. USB completion proves the host consumed a report, not that a particular
 game acted on it. Inspecting web details releases this browser's captured input
 without taking ownership from another control session.
 
+## Automatic P1 transport selection
+
+Enable `KVM_XBOX_S3_PLAYER1` and `KVM_XBOX_DIRECT_PLAYER1` together. Keep all
+four physically verified S3 assignments: configured main DEVICE USB takes P1,
+and its paired S3 takes over when the cable is removed. Never change player
+assignments merely to accommodate the direct cable. A disconnected standby S3
+is expected while direct P1 is active; discovery remains available and the
+standby receives neutral reports when present. P2-P4 retain independent routes.
+
+The LCD P1 DIRECT/WIFI label and browser details follow the selected transport.
+The compact header keeps all four controller tiles and LAN addresses visible;
+tap a tile for USB counts and report freshness. USB ON means enumeration, not
+that a particular game handled an input. See [verified handoff and current
+physical assignments](CONTROLLER-HANDOFF.md).
+
 ## Data path and compatibility
 
 Signed S3 discovery supplies per-player identity and USB configuration. A
@@ -36,6 +51,7 @@ The existing authenticated `/ws` status reply gains a second binary message:
 
 | Field | Meaning |
 | --- | --- |
+| `transport` | Selected `direct` or `wifi`; optional for older firmware |
 | `player`, `configured`, `seen`, `ip` | Slot 1-4, pairing present, authenticated discovery observed, learned address |
 | `connection` | 0 not seen/unpaired; 1 reachable, USB waiting; 2 USB configured; 3 status stale |
 | `held` | Main ESP's latest sent input label; very small stick values use `ANALOG` |

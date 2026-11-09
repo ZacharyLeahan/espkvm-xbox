@@ -5,6 +5,12 @@
 int main(void)
 {
     const int64_t now=10000000;
+    assert(!xbox_controller_use_direct(false,false,true)); /* S3-only startup. */
+    assert(!xbox_controller_use_direct(false,true,true)); /* Replugging must not hide working Wi-Fi. */
+    assert(xbox_controller_use_direct(true,true,true)); /* Configured direct P1 takes over. */
+    assert(!xbox_controller_use_direct(false,false,true)); /* Cable removal falls back. */
+    assert(xbox_controller_use_direct(false,true,false)); /* Show cable enumeration if no Wi-Fi. */
+    assert(!xbox_controller_use_direct(false,false,false)); /* Nothing connected. */
     xbox_controller_status_t s={0};
     assert(xbox_controller_connection(&s,now)==0);
     s.configured=true;assert(xbox_controller_connection(&s,now)==0);

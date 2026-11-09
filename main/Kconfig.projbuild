@@ -51,15 +51,25 @@ menu "ESP-KVM"
                 Replace the USB identity with one Xbox controller. Keyboard
                 input is mapped to controller buttons; mouse/MSC are disabled.
                 Stale state releases after 500 ms. Requires a controller-port
-                cable. Touchscreen controller overlay is not implemented.
+                cable. The touchscreen provides controller and status views.
 
         config KVM_XBOX_S3_PLAYER1
             bool "Route Xbox players to paired S3s over home Wi-Fi"
             depends on KVM_USB_XBOX
             default n
             help
-                Replace local P4 USB output with authenticated UDP to up to four S3s.
+                Send authenticated UDP to paired S3s. By default this replaces
+                local P4 USB; enable direct player one below for a mixed setup.
                 Existing controller inputs and 500 ms expiry remain in use.
+        config KVM_XBOX_DIRECT_PLAYER1
+            bool "Prefer DEVICE USB for P1 with automatic Wi-Fi fallback"
+            depends on KVM_XBOX_S3_PLAYER1
+            default n
+            help
+                Keep all four paired S3 routes available. Prefer DEVICE USB
+                for player one while configured, otherwise use its paired S3.
+                The standby S3 receives neutral input while direct P1 is active.
+
         config KVM_XBOX_S3_KEY
             string "Private 64-character hexadecimal S3 pairing key"
             depends on KVM_XBOX_S3_PLAYER1

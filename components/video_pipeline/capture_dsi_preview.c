@@ -36,6 +36,7 @@
 #include "esp_lcd_panel_ops.h"
 #include "esp_log.h"
 #include "esp_timer.h"
+#include "esp_netif.h"
 #include "driver/i2c_master.h"
 #include "driver/ppa.h"
 #include "hal/mipi_dsi_host_ll.h"
@@ -95,6 +96,30 @@ static atomic_uint s_bar_margin = 16;
 static unsigned s_draw_mode = LCD_UI_STATS;
 static bool s_show_stats = true;
 static atomic_int s_player_selected = -1;
+static char s_network[54] = "NETWORK: CONNECTING";
+static void update_network(void)
+{
+    const char *keys[] = {"ETH_DEF", "WIFI_STA_DEF"};
+    const char *labels[] = {"ETHERNET", "WI-FI"};
+    size_t used = 0;
+    s_network[0] = 0;
+    for (unsigned i = 0; i < 2; ++i) {
+        esp_netif_t *netif = esp_netif_get_handle_from_ifkey(keys[i]);
+        esp_netif_ip_info_t info;
+        if (!netif || !esp_netif_is_netif_up(netif) ||
+            esp_netif_get_ip_info(netif, &info) != ESP_OK || !info.ip.addr) continue;
+        used += snprintf(s_network + used, sizeof(s_network) - used,
+                         "%s%s " IPSTR, used ? "  " : "", labels[i], IP2STR(&info.ip));
+    }
+    if (!used) snprintf(s_network, sizeof(s_network), "NETWORK: NO LAN IP");
+}
+static void draw_network(void)
+{
+    if (!s_show_stats) return;
+    /* Keep LAN addresses visible even while a controller detail is open. */
+    lcd_pad_rect(s_fb, 0, 66, LCD_W, 20, 0);
+    lcd_pad_text(s_fb, 4, 69, s_network);
+}
 static void draw_players(void)
 {
     if(!s_show_stats)return;
@@ -187,7 +212,7 @@ static void touch_task(void *arg)
                     atomic_store(&s_player_selected,atomic_load(&s_player_selected)==player_hit?-1:player_hit);
                     menu_gesture=true;
                 } else if(press && !hit && count==1 && lcd_ui_stats(mode) && atomic_load(&s_player_selected)>=0 &&
-                          x>=32 && x<608 && y>=70 && y<240) {
+                          x>=32 && x<608 && y>=94 && y<240) {
                     atomic_store(&s_player_selected,-1);menu_gesture=true;
                 } else if (press && !hit && count==1 && mode==LCD_UI_BT && lcd_ui_bt_timing(x,y)) {
 #if CONFIG_KVM_USB_XBOX
@@ -342,6 +367,7 @@ void capture_dsi_preview_tick(uint32_t completed)
         status.hres != last_w || status.vres != last_h || status.input_hz != last_hz ||
         status.interlaced != last_interlaced;
     if (!s_strip_us || now - s_strip_us >= 1000000 || changed) {
+        update_network();
         if (s_strip_us && now - s_strip_us >= 1000000) {
             s_lcd_fps10 = (unsigned)((uint64_t)s_lcd_updates * 10000000 / (now - s_strip_us));
             s_lcd_updates = 0;
@@ -366,6 +392,7 @@ void capture_dsi_preview_tick(uint32_t completed)
         memset(s_fb, 0, LCD_FB_BYTES);
         if (s_show_stats) lcd_status_strip(s_fb, LCD_W, LCD_H, s_strip);
         draw_players();
+        draw_network();
         if (s_show_stats && s_record.available) lcd_record_button(s_fb, LCD_W, LCD_H,
             s_record.recording, s_record.busy, s_record.seconds);
 #if CONFIG_KVM_USB_XBOX
@@ -1107,6 +1134,7 @@ void capture_dsi_preview_frame(const void *src, uint32_t width, uint32_t height,
 #if CONFIG_KVM_DSI_STATUS_STRIP
     if (s_show_stats) lcd_status_strip(s_fb, LCD_W, LCD_H, s_strip);
     draw_players();
+    draw_network();
     if (s_show_stats && s_record.available) lcd_record_button(s_fb, LCD_W, LCD_H,
         s_record.recording, s_record.busy, s_record.seconds);
 #if CONFIG_KVM_USB_XBOX

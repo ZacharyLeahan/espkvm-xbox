@@ -429,3 +429,10 @@ image. A supported Raspberry Pi test or a verified ESP32-P4 example for this
 exact panel would distinguish host protocol mismatch from LCD-side startup
 behavior. After these diagnostics, the normal Xbox firmware was reflashed;
 `GET http://192.168.1.169/` returned HTTP 200.
+
+## Mixed-controller overlay
+
+The default stats overlay keeps all four player tiles and Ethernet/Wi-Fi LAN
+addresses in the top 86 pixels. Controller details open below the network row,
+leaving LAN addresses visible. P1 DIRECT/WIFI follows the selected live output;
+P2-P4 remain separate routes. See [controller handoff](CONTROLLER-HANDOFF.md).

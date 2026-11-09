@@ -176,3 +176,13 @@ docs/             HARDWARE-NOTES.md (measured facts), PORTING.md
   [the shared entrypoint](docs/AGENT-XBOX-TESTING.md) authoritative. Activate
   `/stream` before reviewing MJPEG stills: idle snapshots can be old even when
   raw capture counters advance. Do not diagnose a freeze from those stills.
+
+## Automatic mixed Xbox routing
+
+Keep DEVICE USB on physical Xbox P1. Enable `KVM_XBOX_S3_PLAYER1` and
+`KVM_XBOX_DIRECT_PLAYER1` to prefer configured direct P1 and automatically fall
+back to its paired S3. Do not renumber adapters as a side effect of switching
+transport. Pairing is an operator-maintained physical map, not automatic USB
+socket discovery. Consult [current verified assignments and handoff evidence](docs/CONTROLLER-HANDOFF.md)
+before hardware tests. Activate `/stream` before reviewing JPEG snapshots;
+idle stills may be cached. USB completion counters prove transport, not game behavior.

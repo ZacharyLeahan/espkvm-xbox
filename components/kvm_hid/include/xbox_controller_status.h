@@ -7,7 +7,7 @@
 #include <errno.h>
 
 typedef struct {
-    bool configured,seen,usb,diagnostics,diagnostic_usb;
+    bool configured,seen,usb,diagnostics,diagnostic_usb,direct_usb;
     char ip[16],held[48];
     uint32_t sent,send_errors,submitted,consumed;
     int64_t beacon_at,diagnostic_at,completion_at,activity_at;
@@ -15,6 +15,9 @@ typedef struct {
 } xbox_controller_status_t;
 /* A consistent cached snapshot; never performs network I/O. */
 void xbox_s3_route_status(xbox_controller_status_t out[4]);
+/* A configured direct P1 wins; an enumerating cable must not hide working Wi-Fi. */
+static inline bool xbox_controller_use_direct(bool connected,bool bus_alive,bool wifi_ready)
+{ return connected || (bus_alive && !wifi_ready); }
 /* Zero timestamp means unknown, never a freshly connected controller. */
 static inline int64_t xbox_controller_age(int64_t at,int64_t now)
 { return at ? (now-at)/1000 : -1; }

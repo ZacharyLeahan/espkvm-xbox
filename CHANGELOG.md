@@ -7,6 +7,16 @@ bumps the patch).
 
 ## [Unreleased]
 
+### Fixed
+
+- Automatically select configured DEVICE USB for Xbox P1 and fall back to its
+  paired S3 without draining logical input or interrupting Wi-Fi P2-P4. Show
+  the selected transport and LAN addresses in the compact controller overlay.
+- Bind S3 report output and diagnostics to the preferred live interface when
+  Ethernet and Wi-Fi share a subnet; retain discovery on both links.
+- Retry unconfigured, unsuspended Xbox USB enumeration with bounded backoff in
+  main and S3 firmware. S3 recovery requires firmware 0.2.2 installed over USB.
+
 ### Documentation
 
 - Record fixed DEVICE USB player-one wiring, intended Wi-Fi P2-P4, current

@@ -8,6 +8,9 @@
 #include <stdlib.h>
 #include "xbox_s3_route.h"
 #include "xbox_controller_status.h"
+#if CONFIG_KVM_XBOX_DIRECT_PLAYER1
+#include "usb_xbox.h"
+#endif
 #include "xbox_input_history.h"
 #include "esp_http_client.h"
 #include "freertos/task.h"
@@ -15,31 +18,67 @@
 #include "esp_log.h"
 #include "esp_random.h"
 #include "esp_timer.h"
+#include "esp_netif.h"
 #include "lwip/sockets.h"
 #include "fcntl.h"
 
 static int s_socket=-1;
+static int s_tx_socket=-1;
+static char s_tx_interface[IFNAMSIZ];
+static bool route_output_interface(void)
+{
+    esp_netif_t *netif=esp_netif_get_default_netif();
+    struct ifreq interface={0};
+    if(!netif || esp_netif_get_netif_impl_name(netif,interface.ifr_name)!=ESP_OK)return false;
+    if(!strcmp(s_tx_interface,interface.ifr_name))return true;
+    /* lwIP's first same-subnet match can select Wi-Fi even when Ethernet has
+     * higher route priority. Keep discovery unbound, but send on the preferred
+     * live interface, following failover changes without restarting the rig. */
+    if(setsockopt(s_tx_socket,SOL_SOCKET,SO_BINDTODEVICE,&interface,sizeof(interface))<0)return false;
+    memcpy(s_tx_interface,interface.ifr_name,sizeof(s_tx_interface));
+    ESP_LOGI("xbox_s3","Controller output interface: %s",s_tx_interface);
+    return true;
+}
 static psa_key_id_t s_key;
 static uint32_t s_session;
 static struct {
     uint8_t mac[6],last_report[20];
     uint32_t session,hello_seq,sequence;
     int64_t at,sent_at;
+    int64_t error_logged_at;
     bool configured,usb;
+    unsigned logged_connection;
     struct sockaddr_in address;
 } s_peers[4];
 static portMUX_TYPE s_lock=portMUX_INITIALIZER_UNLOCKED;
 
 
 static xbox_controller_status_t s_status[4];
-void xbox_s3_route_status(xbox_controller_status_t out[4])
+static void wifi_status(xbox_controller_status_t out[4])
 {
     portENTER_CRITICAL(&s_lock);
     memcpy(out,s_status,sizeof(s_status));
     portEXIT_CRITICAL(&s_lock);
 }
+void xbox_s3_route_status(xbox_controller_status_t out[4])
+{
+    wifi_status(out);
+#if CONFIG_KVM_XBOX_DIRECT_PLAYER1
+    usb_xbox_status_t usb;usb_xbox_status(&usb);
+    if(!xbox_controller_use_direct(usb.connected,usb.bus_alive,
+        xbox_controller_connection(&out[0],esp_timer_get_time())==2))return;
+    xbox_controller_status_t *p1=&out[0];
+    memset(p1,0,sizeof(*p1));p1->direct_usb=true;
+    p1->configured=true;p1->seen=usb.bus_alive || usb.connected;
+    p1->usb=usb.connected;p1->diagnostics=true;p1->diagnostic_usb=usb.connected;
+    p1->diagnostic_at=esp_timer_get_time();p1->completion_at=usb.completion_at;
+    p1->submitted=usb.submitted;p1->consumed=usb.consumed;p1->sent=usb.submitted;
+    usb_xbox_history(p1->held,(char[3][48]){{0}},(char[48]){0});
+#endif
+}
 typedef struct {
     esp_http_client_handle_t client;
+    struct ifreq interface;
     char ip[16],body[512];
     size_t used;
     bool overflow;
@@ -64,18 +103,24 @@ static void diagnostics_worker(void *unused)
     if(!cache) { vTaskDelete(NULL);return; }
     for(;;) {
         xbox_controller_status_t peers[4];
-        xbox_s3_route_status(peers);
+        wifi_status(peers);
         for(unsigned p=0;p<4;p++) {
             if(!peers[p].seen)continue;
             diagnostic_peer_t *sample=&cache[p];
-            if(sample->client && (strcmp(sample->ip,peers[p].ip) || sample->generation!=peers[p].generation)) {
+            esp_netif_t *netif=esp_netif_get_default_netif();
+            struct ifreq interface={0};
+            if(!netif || esp_netif_get_netif_impl_name(netif,interface.ifr_name)!=ESP_OK)continue;
+            if(sample->client && (strcmp(sample->ip,peers[p].ip) || sample->generation!=peers[p].generation ||
+                strcmp(sample->interface.ifr_name,interface.ifr_name))) {
                 esp_http_client_cleanup(sample->client);sample->client=NULL;sample->retry_at=0;
             }
             if(esp_timer_get_time()<sample->retry_at)continue;
             if(!sample->client) {
                 char url[64];snprintf(url,sizeof(url),"http://%s/status",peers[p].ip);
+                sample->interface=interface;
                 esp_http_client_config_t config={.url=url,.timeout_ms=500,.buffer_size=512,
                     .disable_auto_redirect=true,.keep_alive_enable=true,
+                    .if_name=&sample->interface,
                     .event_handler=diagnostic_event,.user_data=sample};
                 sample->client=esp_http_client_init(&config);
                 if(!sample->client)continue;
@@ -114,13 +159,18 @@ static bool peer_alive(unsigned player)
     portEXIT_CRITICAL(&s_lock);
     return at && esp_timer_get_time()-at<4000000;
 }
-bool xbox_s3_route_alive(void) { return peer_alive(0); }
+bool xbox_s3_route_alive(void)
+{
+#if CONFIG_KVM_XBOX_DIRECT_PLAYER1
+    usb_xbox_status_t usb;usb_xbox_status(&usb);
+    if(usb.bus_alive || usb.connected)return true;
+#endif
+    return peer_alive(0);
+}
 bool xbox_s3_route_ready(void)
 {
-    portENTER_CRITICAL(&s_lock);
-    bool usb=s_peers[0].usb;
-    portEXIT_CRITICAL(&s_lock);
-    return usb && peer_alive(0);
+    xbox_controller_status_t states[4];xbox_s3_route_status(states);
+    return xbox_controller_connection(&states[0],esp_timer_get_time())==2;
 }
 esp_err_t xbox_s3_route_init(void)
 {
@@ -148,6 +198,11 @@ esp_err_t xbox_s3_route_init(void)
     if(bind(s_socket,(void *)&local,sizeof(local))<0 || fcntl(s_socket,F_SETFL,O_NONBLOCK)<0) {
         close(s_socket); s_socket=-1; return ESP_FAIL;
     }
+    s_tx_socket=socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
+    if(s_tx_socket<0 || fcntl(s_tx_socket,F_SETFL,O_NONBLOCK)<0) {
+        if(s_tx_socket>=0)close(s_tx_socket);
+        close(s_socket);s_socket=-1;s_tx_socket=-1;return ESP_FAIL;
+    }
     if(xTaskCreate(diagnostics_worker,"s3_status",6144,NULL,2,NULL)!=pdPASS)return ESP_ERR_NO_MEM;
     ESP_LOGI("xbox_s3","Xbox players route to paired S3s; waiting for home-network discovery");
     return ESP_OK;
@@ -169,6 +224,7 @@ void xbox_s3_route_tick(const uint8_t reports[4][20])
         if(packet.session==s_peers[p].session && !xbox_s3_newer(packet.sequence,s_peers[p].hello_seq))continue;
         bool changed=!peer_alive(p) || packet.session!=s_peers[p].session || from.sin_addr.s_addr!=s_peers[p].address.sin_addr.s_addr;
         bool reboot=packet.session!=s_peers[p].session;
+        bool usb_changed=s_peers[p].usb!=((packet.flags&1)!=0);
         s_peers[p].address=from; s_peers[p].address.sin_port=htons(XBOX_S3_PORT);
         s_peers[p].session=packet.session; s_peers[p].hello_seq=packet.sequence;
         portENTER_CRITICAL(&s_lock);
@@ -179,27 +235,60 @@ void xbox_s3_route_tick(const uint8_t reports[4][20])
         state->seen=true;state->usb=s_peers[p].usb;state->beacon_at=s_peers[p].at;
         inet_ntoa_r(from.sin_addr,state->ip,sizeof(state->ip));
         portEXIT_CRITICAL(&s_lock);
-        if(changed)ESP_LOGI("xbox_s3","Player %u S3 discovered at %s; USB %s",p+1,inet_ntoa(from.sin_addr),s_peers[p].usb?"configured":"not configured");
+        if(changed || usb_changed)ESP_LOGI("xbox_s3",
+            "Route %u S3 %02x:%02x:%02x:%02x:%02x:%02x at %s; USB %s; physical Xbox port unknown",
+            p+1,packet.mac[0],packet.mac[1],packet.mac[2],packet.mac[3],packet.mac[4],packet.mac[5],
+            inet_ntoa(from.sin_addr),s_peers[p].usb?"configured":"not configured");
     }
     int64_t now=esp_timer_get_time();
+    bool output_ready=route_output_interface();
+    xbox_controller_status_t snapshot[4];
+    wifi_status(snapshot);
+#if CONFIG_KVM_XBOX_DIRECT_PLAYER1
+    usb_xbox_status_t direct;usb_xbox_status(&direct);
+    const uint8_t neutral[20]={0,20};
+#endif
     for(unsigned p=0;p<4;p++) {
+        const uint8_t *report=reports[p];
+#if CONFIG_KVM_XBOX_DIRECT_PLAYER1
+        /* Keep the standby receiver discovered and neutral, never duplicate P1. */
+        if(p==0 && direct.connected) {
+            report=neutral;
+            /* A removed standby is expected during a cable swap. Its next
+             * signed announcement resumes neutral refresh without error spam. */
+            if(!peer_alive(0))continue;
+        }
+#endif
+        unsigned connection=xbox_controller_connection(&snapshot[p],now);
+        if(connection!=s_peers[p].logged_connection) {
+            s_peers[p].logged_connection=connection;
+            ESP_LOGI("xbox_s3","Route %u: %s; physical Xbox port unknown",p+1,
+                connection==2?"USB configured":connection==1?"USB waiting":connection==3?"telemetry stale":"not seen");
+        }
         /* Broadcast discovery can be lost while unicast control still works.
          * Keep the authenticated learned route until a new announcement updates
          * it. Input expiry is independent; an offline/rebooted receiver cannot
          * replay these states because its boot nonce must match. */
         if(!s_peers[p].at)continue;
         /* Each peer owns its refresh clock and replay sequence. */
-        if(now-s_peers[p].sent_at<20000 && !memcmp(s_peers[p].last_report,reports[p],20))continue;
+        if(now-s_peers[p].sent_at<20000 && !memcmp(s_peers[p].last_report,report,20))continue;
         xbox_s3_packet_t out={.kind=XBOX_S3_STATE,.sequence=++s_peers[p].sequence,
             .session=s_session,.receiver=s_peers[p].session};
-        memcpy(out.mac,s_peers[p].mac,6); memcpy(out.report,reports[p],20);
-        bool sent=xbox_s3_sign(s_key,&out) && sendto(s_socket,&out,sizeof(out),MSG_DONTWAIT,
-            (void *)&s_peers[p].address,sizeof(s_peers[p].address))==sizeof(out);
-        if(sent)memcpy(s_peers[p].last_report,reports[p],20);
+        memcpy(out.mac,s_peers[p].mac,6); memcpy(out.report,report,20);
+        bool signed_packet=xbox_s3_sign(s_key,&out);
+        int written=signed_packet && output_ready?sendto(s_tx_socket,&out,sizeof(out),MSG_DONTWAIT,
+            (void *)&s_peers[p].address,sizeof(s_peers[p].address)):-1;
+        int send_errno=signed_packet && output_ready && written<0?errno:0;
+        bool sent=written==sizeof(out);
+        if(!sent && (!s_peers[p].error_logged_at || now-s_peers[p].error_logged_at>=5000000)) {
+            ESP_LOGW("xbox_s3","Route %u failed: signed=%d bytes=%d errno=%d",p+1,signed_packet,written,send_errno);
+            s_peers[p].error_logged_at=now;
+        }
+        if(sent)memcpy(s_peers[p].last_report,report,20);
         char held[48]={0};
-        xbox_history_label(xbox_history_mask(reports[p],0),held,sizeof(held));
+        xbox_history_label(xbox_history_mask(report,0),held,sizeof(held));
         bool active=false;
-        for(unsigned i=2;i<20;i++)if(reports[p][i])active=true;
+        for(unsigned i=2;i<20;i++)if(report[i])active=true;
         if(active && !strcmp(held,"-"))strcpy(held,"ANALOG");
         portENTER_CRITICAL(&s_lock);
         if(sent) {
