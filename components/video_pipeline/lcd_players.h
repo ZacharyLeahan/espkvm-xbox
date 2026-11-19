@@ -34,7 +34,7 @@ static inline void lcd_players_draw(uint8_t *fb,const capture_lcd_players_t *s,i
     if(selected<0 || selected>3)return;
     unsigned p=(unsigned)selected;
     bool direct=s->direct_usb && p==0;
-    char line[48];
+    char line[64];
     lcd_pad_rect(fb,32,94,576,146,18);
     snprintf(line,sizeof(line),direct?"P%u DIRECT USB - TAP TO CLOSE":"P%u WI-FI - TAP TO CLOSE",p+1);lcd_pad_text(fb,44,104,line);
     snprintf(line,sizeof(line),"%s  %s",direct?"DEVICE USB":s->ip[p][0]?s->ip[p]:"NOT DISCOVERED",
