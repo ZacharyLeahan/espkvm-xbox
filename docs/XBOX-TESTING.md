@@ -1,7 +1,10 @@
 # Real-Xbox observation and regression tests
 
-Controller input is deliberately out of scope until the cable and first real
-input test are available. Use the physical controller for the steps below.
+This original observation workflow leaves controller input out of scope. Later
+[real-console controller validation](S3-PLAYER1-VALIDATION.md) and
+[four-player tests](S3-FOUR-PLAYER-VALIDATION.md) establish input separately.
+For repeatable reviewed input sequences and evidence, see the
+[scenario runner](XBOX-SCENARIOS.md). The manual matrix below remains useful.
 
 ## Capture evidence
 

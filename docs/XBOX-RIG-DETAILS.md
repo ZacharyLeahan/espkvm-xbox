@@ -36,14 +36,19 @@ The Waveshare screen works in this fork but is not a vendor-supported configurat
 
 DEVICE USB is always wired to physical Xbox P1 by operator convention; never
 ask which port or assume it can be on P2-P4. Optional Wi-Fi S3 adapters are
-intended for P2-P4. This fixed assignment does not depend on automatic USB port
+labelled P1-P4, with the P1 S3 used when DEVICE USB is disconnected. This fixed assignment does not depend on automatic USB port
 detection. Live enumeration and host completion counts still determine whether
 the connection is operational.
 
-The currently installed direct build supports P1 only. The existing all-S3
-build disables direct DEVICE USB and routes all four players over Wi-Fi. Mixed
-direct P1 plus Wi-Fi P2-P4 is the intended layout, but requires implementation
-and validation before claiming simultaneous multiplayer support in direct mode.
+Mixed routing is enabled with `CONFIG_KVM_XBOX_S3_PLAYER1=y` and
+`CONFIG_KVM_XBOX_DIRECT_PLAYER1=y`: DEVICE USB remains P1 and the paired S3
+receivers keep all four original identities. The direct-P1 option automatically
+uses the P1 S3 whenever DEVICE USB is not configured. While direct P1 is active,
+its standby S3 remains discovered and receives neutral input. Plain direct and
+all-S3 builds remain supported. The LCD shows every route in a compact row, including unseen/stale adapters,
+with ESP LAN IPs always visible and per-controller details behind a tap. On 2026-11-05 all four routes were USB-configured simultaneously and Xbox
+completion counters advanced for direct P1 and Wi-Fi P2-P4 in one passive sample
+window. This validates simultaneous transport, not game-specific behavior.
 Direct P1 navigated XBMC and opened Controller Tool on 2026-11-04; the LCD showed
 USB ON and the operator confirmed advancing Xbox report completions. Follow
 [the shared test loop and fresh-capture precautions](AGENT-XBOX-TESTING.md#fixed-controller-wiring-and-current-test-loop).

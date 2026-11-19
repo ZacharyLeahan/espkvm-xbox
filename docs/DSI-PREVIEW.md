@@ -1,5 +1,139 @@
 # Waveshare 3.5-inch DSI LCD (E): live Xbox preview verified
 
+## Controlled fallback synchronization experiment (2026-11-03)
+
+The user authorized further device experiments. The first candidate gives the
+write-only third startup attempt the same ten-second settling interval and
+host/DPI stop-resume sequence as read-capable attempts. It still skips all
+post-start register reads on that fallback, preserving its avoidance of BTA
+timeouts. No PLL values, controller pairings, or UI modes were changed in this
+experiment. A boot which succeeds on attempt one/two does not exercise the new
+behavior and must not be counted as evidence for it.
+
+The paired `build.s3-player1` build passed and USB flashing verified its hash.
+The previous app image and source are retained locally under
+`observations/lcd-2026-11-03/rollback/`. Previous app SHA256:
+`3b0a38c14e51554795ebb5e79d2a6362c453621de990acc1c7d61b5f23c4ede4`.
+Experiment app SHA256:
+`154ad19e58050bd9fa2ed5fd41275b8dd16db7daef0ddfbe011e86fd88aaf803`.
+These local firmware images are not release artifacts and must not be published.
+
+The captured test boot succeeded on attempt two, so it did not exercise the
+changed fallback. The panel again reported clock source `0x93` after the pause;
+touch initialized and the local slate reported NO SIGNAL. This boot is
+inconclusive for the fallback hypothesis. The user subsequently confirmed the
+text was clear on that boot.
+
+For the next authorized trial, `CONFIG_KVM_DSI_PREVIEW_FORCE_FALLBACK=y` is set
+only in the private paired sdkconfig. The new diagnostic option defaults off.
+It bypasses attempts one/two and explicitly logs forced attempt three, retaining
+the same clock values and the fallback pause/resume experiment. This isolates
+write-only startup, but does not reproduce the history of failed BTA reads and
+host recreation in a naturally reached fallback. The prior private config is
+saved at `build.s3-player1/sdkconfig.before-force-fallback`; do not publish it.
+Disable the diagnostic option after the experiment before normal builds.
+
+The forced-fallback image built successfully and was USB-flashed with hash
+verification (app SHA256
+`ddfe303b804e75452f7152a035f2e09a929b3b2dda1875eccf599ba9d92ec609`).
+The captured boot explicitly logged forced attempt 3, write-only setup,
+approximately 60 DMA completions/sec during settling, and the no-read
+pause/resume at 32.48 seconds. Touch initialized; the local slate reported
+NO SIGNAL. Host error registers were zero before resynchronization. The
+diagnostic remains enabled for visual classification; a clear physical picture
+has not yet been confirmed for this forced path. Raw boot evidence is kept at
+`observations/lcd-2026-11-03/forced-fallback-boot.log` locally.
+
+## Intermittent duplicated/corrupted output investigation (2026-11-01)
+
+The supplied photos show repeated whole images and repeated local status text
+and recording controls, including a no-signal slate. This places the fault in
+the local composition/scanout/DSI/panel path; the Xbox source alone cannot
+account for corruption of locally generated overlays. A still photo cannot
+identify the failing component or distinguish a persistent fault from tearing.
+
+Source review found a specific PLL operating-point discrepancy. The previous
+ICN6211 values `0x6b=0x73`, `0x69=0x10` encode P=6, M=16, S=16. At a 576 Mb/s
+lane rate, Linux's reference calculation gives 144 MHz / 6 = 24 MHz at the
+PLL input after predivision. The [Linux ICN6211 driver](https://github.com/torvalds/linux/blob/master/drivers/gpu/drm/bridge/chipone-icn6211.c)
+restricts that input to 5..20 MHz (a driver constraint, not a verified panel
+datasheet limit). The candidate change uses `0x6b=0x76`, `0x69=0x20`:
+P=12, M=32, S=16, yielding a 12 MHz divided reference, the same 384 MHz VCO,
+and the same 24 MHz output. This is a plausible stability correction, **not a
+confirmed explanation of the photographed fault**. Visual validation remains
+pending.
+
+Validation: the divider calculation confirms unchanged 384 MHz VCO / 24 MHz
+pixel clock and a 12 MHz divided reference. `idf.py -B build.lcd-release-check
+build` completed successfully using the existing LCD profile, with warnings
+elsewhere in the working tree; `git diff --check` passed. These checks establish
+buildability and arithmetic, not panel stability.
+
+Other suspects remain:
+
+- The panel MCU previously changed PLL registers after startup. Immediate
+  register readback does not establish their steady-state values. The ten-second
+  `icn6211_inspect_video()` pause stops and resumes the host/bridge and could
+  itself disturb synchronization; attempts one/two run it, attempt three does
+  not. These differing startup paths must be recorded in each trial.
+- DSI/PSRAM starvation: IDF logs bridge underruns but does not recover the
+  picture. Existing link logging samples startup and the first five submitted
+  frames only, so it does not establish runtime health. Even a no-signal slate
+  still scans out from PSRAM continuously. The nominal RGB scanout payload is
+  55.296 MB/s at 60 Hz, before capture, rendering, and other memory traffic.
+- Ribbon/connector/power integrity remains possible. Touch I2C responding does
+  not verify the high-speed lanes. Power down before reseating a ribbon.
+
+The installed IDF draw path flushes an owned framebuffer before selecting it;
+there is no missing full-frame cache flush at `submit_preview()`. Its DMA
+callback selects the next framebuffer before advancing our completion counter.
+This supports the existing retirement wait but is not a complete proof against
+cross-core races. Scaler changes are a lower-priority explanation because they
+cannot alone duplicate the separately drawn local overlays.
+
+Validation should change one variable at a time: record good/bad cold and warm
+starts with startup-attempt number and bridge errors; compare the PLL candidate
+against the prior build; then separately compare startup with/without the paused
+readback. Use the existing host-generated color bars and standalone checkerboard
+to separate panel/link faults from PSRAM/capture contention. Clean host bars with
+a corrupt checkerboard implicate the framebuffer/bridge path; corrupt host bars
+retain the link/panel/clock suspects. A successful DMA counter is insufficient
+visual evidence. Do not repeatedly read DSI registers during active video: prior
+tests left the PHY in receive direction after a timeout.
+
+The device did not resolve at `espkvm.local` from this session, and the historical
+192.168.1.169 address was not reachable. An eight-second serial sample from
+`/dev/cu.usbmodem1101` contained boot output for the existing November 1 build,
+P4 rev 3.2, and 200 MHz PSRAM, but ended before LCD initialization. A retained
+crash dump was reported without a recorded reason; it does not establish any
+connection to the photographed fault. Runtime visual validation remains open.
+
+The user subsequently authorized USB flashing. `idf.py -B build.lcd-release-check
+-p /dev/cu.usbmodem1101 flash` completed with hash verification. Serial boot
+showed Ethernet at 192.168.1.218. LCD attempt one timed out; attempt two read
+back the new `0x6b=0x76`, `0x69=0x20` and `0x56=0x92`, then started preview.
+The ten-second paused readback retained the new divider/multiplier but showed
+`0x56=0x93` (internal clock selection per Linux), rather than the requested
+MIPI source `0x92`. This is further evidence that the clock source does not
+remain as initially programmed; it limits what this PLL comparison can prove.
+DSI host error registers were zero at startup and stream sampling; live
+1280x720 capture and local preview submissions advanced. These host observations
+do not establish a clear physical picture. Await the user's visual check.
+
+The user reported a clear picture after the PLL candidate, then recurrence of
+the looping/fuzzy picture after the VIEW-arrow firmware was flashed. The arrow
+build retains `0x6b=0x76`, `0x69=0x20`; the PLL change is therefore not a proven
+cure. The saved arrow-build boot log shows both read-capable startup attempts
+timed out, so attempt three started using write-only setup and skipped the
+ten-second paused inspection entirely. This differs from the reported-clear
+boot, which succeeded on attempt two, verified PLL writes, and performed the
+pause/readback. Both boots reported zero host DSI errors during streaming.
+Startup-path dependence is now a concrete comparison target, not proof that
+the arrow drawing caused a regression. Preserve these controls separately:
+PLL settings, readback availability, the ten-second settling interval, and
+stop/resume synchronization. Repeating the same firmware across boots with
+visual classification is needed before attributing success to a code change.
+
 ## Recommended local LCD configuration (2026-10-03)
 
 `CONFIG_KVM_DSI_PREVIEW_BUFFERS=3` lets the CPU prepare a spare frame while
@@ -40,7 +174,163 @@ the test; the necessary subset has not yet been isolated. The bridge's PLL
 registers reverted by the later readback, so successful output does not prove
 those writes alone fixed it. This standalone profile disables CSI capture.
 
+## Combined controller stats screen
+
+The default stats view uses a compact P1-P4 status row at y=24..64 and an ESP
+LAN address line at y=66..86, leaving the Xbox video below the header clear.
+P1 retains its DIRECT label; P2-P4 retain WIFI labels even when unavailable.
+Tap a player for its controller IP, USB state, report activity/counters and held
+input. Only one detail panel opens, below the LAN line; tap again or tap the
+panel to close it. The selected tile is highlighted. The earlier four large
+cards were superseded at the user's request because they covered too much video.
+Missing/stale telemetry stays explicitly unknown, not an empty-socket claim.
+The VIEW button still selects video/pad/other views without changing routing.
+
+For this rig use the private `build.mixed-usb/sdkconfig`, preserving the paired
+S3 P2-P4 identities/key. Enable `KVM_USB_XBOX`, `KVM_XBOX_S3_PLAYER1` and
+`KVM_XBOX_DIRECT_PLAYER1`. Build with
+`idf.py -B build.mixed-usb -D SDKCONFIG=build.mixed-usb/sdkconfig build`.
+The mixed setup keeps its private pairing map in `.env.s3-route-mixed` and
+`build.mixed-usb/sdkconfig`; do not overwrite it with the historical all-S3
+`.env.s3-route` map. The online receiver formerly paired as wireless P1 is now
+P2 in the mixed profile; P3/P4 identities are preserved and the old wireless P2
+receiver is spare. The all-S3 profile is unchanged.
+
+The new option reserves P1 for DEVICE USB while Wi-Fi routing handles P2-P4;
+all-S3 mode remains available with the direct-P1 option disabled. Hardware
+validation of this combined build is pending.
+
+
+### Combined stats validation (2026-11-05)
+
+The mixed, direct-only and all-S3 firmware builds passed without warnings in
+the changed controller/LCD sources. ASan/UBSan host checks covered all four
+visible slots, every detail panel, stale/unseen states and maximum-size report
+counters. The four-card layout was rendered and visually inspected.
+
+The mixed image was USB-flashed with hash verification. The first boot confirmed
+local P1 XID enumeration and Xbox report completions with network routing
+running. Signed discovery then identified the online receiver under its old
+wireless P1 identity. The private mixed profile assigns that receiver to P2;
+the historical all-S3 profile is preserved. After the pairing update and second
+verified flash, the main ESP discovered P2 at its home-network address. At that
+time P1 reported no USB bus, P2 reported USB waiting, and HDMI had no signal;
+simultaneous Xbox report delivery awaits a powered/connected console check.
+P3/P4 remain explicitly unseen, not hidden or reported as empty sockets.
+Evidence is in ignored `observations/mixed-controller-stats-20261105/`.
+
+
+Follow-up powered-console check (2026-11-05): all four live routes reported USB
+configured simultaneously: direct P1 and Wi-Fi P2-P4. Xbox completion counters
+advanced for every player across the same passive status sampling window, and
+HDMI capture was live at 1280x720. This verifies simultaneous report transport,
+not game-specific response or a complete analog/button sweep. Evidence:
+`simultaneous-validation.json` and `controller-status.json` in the same private
+run directory. No USB/HDMI recovery operation was needed after the console's
+connections became active.
+
+Compact UI follow-up (2026-11-05): the default no longer draws the large
+controller cards. All four 40px status tiles and ESP LAN addresses remain in
+the top 86px; only a tapped controller opens its detail panel at y=94..240.
+LAN addresses remain visible during inspection, and the selected tile is
+highlighted. Host ASan/UBSan checks verified untouched video below the default
+header, detail bounds/max counters and preservation of the LAN row. The mixed
+firmware built and was USB-flashed with hash verification. Host-rendered default
+and detail previews plus boot evidence are in ignored
+`observations/compact-controller-ui-20261105/`.
+
+## Automatic P1 selection (2026-11-06)
+
+The earlier mixed-profile reassignment of the original P1 S3 as P2 is superseded.
+Keep all four original labelled identities: the P1 S3 remains P1, and the P2 S3
+remains P2. With `KVM_XBOX_DIRECT_PLAYER1`, configured DEVICE USB takes P1 and
+its paired S3 is the automatic fallback. The LCD uses the same live source as
+routing, changing P1 DIRECT/WIFI rather than hard-coding DIRECT. P2-P4 keep
+independent routes and input-expiry timers.
+
+The main input worker now owns logical P1 state regardless of DEVICE USB cable
+presence. TinyUSB reads a locked snapshot, so USB reset/disconnect cannot drain
+P1's Wi-Fi queue. The inactive S3 receives neutral reports while direct P1 is
+active. Browser and REST target readiness follows the selected P1 transport.
+
+USB enumeration recovery is built into the main controller and S3 firmware
+0.2.2: an unconfigured, unsuspended device detaches for one second and retries
+with 10/20/40/60-second backoff. Configured/suspended hosts are left alone.
+The S3 update needs USB flashing; existing 0.2.1 receivers have no remote update
+or USB reattach endpoint. Build/test results do not imply that an S3 was flashed.
+
+## Direct DEVICE USB player one
+
+For a cable from Xbox port 1 through the passive USB adapter to the P4 DEVICE
+USB-C port, use `CONFIG_KVM_USB_XBOX=y` and disable
+`CONFIG_KVM_XBOX_S3_PLAYER1`. The S3 routing build does not initialize DEVICE
+USB. Keep the power/serial cable on the separate USB-Serial-JTAG connector.
+
+The stats overlay shows one P1 DIRECT tile. Tap it for the adapter/USB-C path,
+USB configuration, submitted reports and completed host transfers. WAIT means
+the host has not configured an active XID interface; ON and advancing transfer
+counts establish USB transport, not game response. P1 is the standing operator cable
+assignment: DEVICE USB always goes to physical P1, never P2-P4. Agents should
+assume that mapping without asking; automatic socket discovery is unavailable. Verify button
+press/release on the console before claiming control works.
+
+A private direct configuration is prepared in `build.direct-usb/sdkconfig`,
+copied from the existing paired LCD/BLE configuration with S3 routing disabled.
+Build with `idf.py -B build.direct-usb -D SDKCONFIG=build.direct-usb/sdkconfig build`.
+
+Direct build verification (2026-11-04): compiled and USB-flashed with hash
+verification on the connected P4. Boot confirmed experimental XID mode; the
+HTTP API returned live 720x480 capture. No XID interface-open or host-consumed
+report appeared in the initial serial sample, so USB connection and game input
+remain unverified. The LCD renderer passed ASan/UBSan bounds checks and its
+host-rendered direct detail panel was visually inspected. Existing boot warnings
+included a retained earlier crash dump and hosted coprocessor version mismatch.
+Private evidence: `observations/direct-usb-20261104/boot.log`. After the operator
+confirmed the cable and powered Xbox, a dry-run-reviewed down/up menu scenario
+completed, but all three screenshots showed the same homebrew selector and no
+new XID log messages appeared. This is not a successful control check. Evidence:
+`observations/direct-usb-20261104/menu-run/`; after a cable reseat the operator reported USB ON and serial confirmed XID
+interface open on ESP USB controller 1, host address 4, plus an XID descriptor
+request. A repeated down/up run still showed no menu change. Enumeration is
+verified, input response remains unverified; see `menu-reconnected/` and
+`reconnect.log` in the same evidence directory. The operator then confirmed
+XBOX REPORT COUNT ADVANCING in the direct detail panel, verifying host transfer
+completion through the direct cable. A further B press/release also left the
+selector unchanged (`back-run/`). Transport is verified; current application
+input handling/liveness remains unverified. Use Xbox Controller Tool or the
+standalone diagnostic title for the next input check.
+
+Follow-up correction: the idle MJPEG still endpoint had returned an old
+published JPEG while raw capture counters advanced. Earlier unchanged-image
+input/reset checks do not establish an unresponsive Xbox. With `/stream` active,
+fresh images showed XBMC at 1280x720. Direct P1 inputs successfully navigated
+Games -> Programs -> Apps -> Controller Test and launched Gamepad.xbe; the Xbox
+Controller Tool Control Test Page was visually confirmed at 720x480 with neutral
+readouts. This verifies direct USB menu navigation and launch, not an exhaustive
+button/analog sweep. Evidence: `programs-run/`, `apps-run/`,
+`controller-folder-run/`, and `gamepad-run/` under the same private directory.
+
+
 ## Recommended build
+
+For this rig's four-adapter controller UI, use the existing private
+`build.s3-player1/sdkconfig` configuration (do not publish it):
+`idf.py -B build.s3-player1 build`. Verify `CONFIG_KVM_USB_XBOX=y`,
+`CONFIG_KVM_XBOX_S3_PLAYER1=y`, `CONFIG_KVM_XBOX_BLE=y`, and
+`CONFIG_KVM_DSI_STATUS_STRIP=y` before flashing. The capture-only
+`build.lcd-release-check` configuration has Xbox support disabled and therefore
+only toggles the header, with no player telemetry or pad views. It is not a
+replacement for the paired controller configuration. Player tiles show Wi-Fi
+beacon freshness separately from USB configuration; player numbers denote
+logical routes, not automatically detected physical Xbox ports.
+
+The corrected four-adapter build passed compilation and the player-tile host
+test with ASan/UBSan, and was flashed over USB with hash verification. Boot
+logs confirmed S3 routing enabled, route 2 discovered with USB configured,
+GT911 initialized, and live preview advancing. This boot succeeded on LCD
+attempt two and again read clock source `0x93` after the diagnostic pause.
+The missing-view configuration is corrected; physical image clarity and
+touch cycling still require visual confirmation.
 
 ### LCD startup failure recovery (2026-10-04)
 
@@ -103,7 +393,10 @@ It sits in the 720p letterbox; full-height content loses the top 20 pixels to
 the opaque strip. Disable the option in menuconfig for a clean local picture.
 Browser video, recordings, and screenshots are untouched.
 
-Tap anywhere to toggle the strip; hold/drag does not repeat. GT911 product ID
+Use the visible bottom-right VIEW arrow to cycle overlays; hold/drag does not
+repeat. The button remains visible in the clean view and on no-signal slates.
+During recording/busy operations it reads REC LOCK, preserving the existing
+view lock. Hidden top/bottom tap areas no longer change the view. GT911 product ID
 is checked before polling at 0x5d (or 0x14). Only ready contact reports are
 acknowledged; no-data packets are not releases. The panel's existing reset and
 configuration are preserved. A low-priority task polls independently of video;

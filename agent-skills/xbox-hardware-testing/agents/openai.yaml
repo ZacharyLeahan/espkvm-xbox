@@ -1,0 +1,3 @@
+interface:
+  display_name: "Xbox hardware testing"
+  short_description: "Use ESP-KVM for real original Xbox game testing"

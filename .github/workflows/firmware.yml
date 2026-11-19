@@ -139,6 +139,13 @@ jobs:
       - run: npm run test
         working-directory: web
       - run: node tools/test_video_probe.mjs
+      - run: node tools/test_run_xbox_scenario.mjs
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python3 -m pip install 'Pillow>=11,<13'
+      - run: python3 tools/test_xbox_diagnostic.py
+      - run: node tools/test_xbox_diagnostic_runner.mjs
 
   # The paste tables: self-consistent (no two characters on one key), and right
   # (every character where the real layout puts it). Both are the kind of

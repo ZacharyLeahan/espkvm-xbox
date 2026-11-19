@@ -23,9 +23,9 @@ int main(void)
     assert(lcd_ui_next(LCD_UI_INPUTS,false)==LCD_UI_NONE);
 #endif
     assert(!lcd_ui_stats(LCD_UI_INPUTS) && !lcd_ui_pad(LCD_UI_INPUTS));
-    assert(lcd_ui_cycle_hit(LCD_UI_INPUTS,448,0));
-    assert(!lcd_ui_cycle_hit(LCD_UI_NONE,448,0));
-    assert(!lcd_ui_cycle_hit(LCD_UI_INPUTS,480,0));
+    assert(lcd_ui_cycle_hit(504,436) && lcd_ui_cycle_hit(631,475));
+    assert(!lcd_ui_cycle_hit(503,450) && !lcd_ui_cycle_hit(632,450));
+    assert(!lcd_ui_cycle_hit(550,435) && !lcd_ui_cycle_hit(550,476));
     char rows[3][48]={"A > LEFT+X","",""},line[51];
     lcd_input_recent(rows,line); assert(!strcmp(line,"A > LEFT+X"));
     strcpy(rows[0],"START > LEFT+X > A > RIGHT+B");
@@ -36,8 +36,6 @@ int main(void)
     memset(rows,0,sizeof(rows));lcd_input_recent(rows,line); assert(!line[0]);
     assert(!lcd_ui_stats(0) && lcd_ui_stats(1) && lcd_ui_stats(2) && !lcd_ui_stats(3));
     assert(!lcd_ui_pad(0) && !lcd_ui_pad(1) && lcd_ui_pad(2) && lcd_ui_pad(3));
-    assert(lcd_ui_bar(0,60) && lcd_ui_bar(479,60) && !lcd_ui_bar(100,60));
-    assert(lcd_ui_bar(15,0) && !lcd_ui_bar(16,0));
     for(unsigned i=0;i<sizeof(lcd_pad_buttons)/sizeof(lcd_pad_buttons[0]);i++) {
         uint8_t keys[6]={0}; int16_t axes[4]={0}; const lcd_pad_button_t *b=&lcd_pad_buttons[i];
         assert(lcd_pad_hit(b->x+b->w/2,b->y+b->h/2,keys,axes));
@@ -64,5 +62,7 @@ int main(void)
     }
     static uint8_t fb[640*480*3];
     lcd_pad_draw(fb);
+    lcd_ui_cycle_draw(fb,false);
+    lcd_ui_cycle_draw(fb,true);
     puts("LCD mode cycle, recording lock, hitboxes, stick diagonals and rendering: PASS");
 }

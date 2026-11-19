@@ -24,9 +24,25 @@ inputs, and capture the results while iterating on the game. The project's
 show that workflow on an original Xbox. Builds were deployed and read back
 through the Xbox dashboard's FTP service; ESP-KVM supplied observation and input.
 
-The pieces work today through agent tools and scripts. A general autonomous test
-runner, automatic deployment/launch, and reliable recovery from console hangs
-remain future work.
+The pieces work today through agent tools and scripts. The
+[scenario runner](docs/XBOX-SCENARIOS.md) repeats reviewed controller sequences,
+collects timestamped screenshots/status, and stops on failed checks or lost
+control. Screen interpretation, automatic deployment/launch, and reliable
+recovery from console hangs remain separate work.
+
+**Credit:** the runner's repeat-and-classify workflow is inspired by
+[kooscode/OXOS](https://github.com/kooscode/oxos), especially
+[`tools/modxo/bootrun.py`](https://github.com/kooscode/oxos/blob/bfec2af8a33528c835cc9dada484142ecaf58f21/tools/modxo/bootrun.py).
+We borrowed the test-loop technique and wrote a new ESP-KVM implementation;
+no OXOS code was copied. Our new [Xbox diagnostic title](diagnostics/xbox/README.md)
+also borrows the technique of an advancing status panel and explicit controller
+acknowledgments from OXOS's
+[image test](https://github.com/kooscode/oxos/tree/bfec2af8a33528c835cc9dada484142ecaf58f21/tests/image-test-title) and
+[controller test](https://github.com/kooscode/oxos/tree/bfec2af8a33528c835cc9dada484142ecaf58f21/tests/controller-test-title).
+It adds a machine-readable visual panel so the runner can check progress and
+input delivery through existing ESP-KVM screenshots, without OCR or a debug BIOS.
+The title builds locally; physical-console validation remains pending.
+OXOS's Modxo power control, serial boot checks and kernel netboot are not included.
 
 ## What it can do
 
@@ -66,11 +82,15 @@ controller adapters and four S3-Zero boards is **$274.85**;
 [receipt details and exclusions](docs/FORK-HISTORY.md#hardware-purchases).
 
 **Standing wiring rule: DEVICE USB is always player 1**, never P2-P4. Optional
-Wi-Fi S3 adapters are intended for players 2, 3 and 4. The current direct build
-supports P1 only; simultaneous direct P1 plus Wi-Fi P2-P4 still needs mixed
-routing support. See the [agent hardware/test-loop entrypoint](docs/AGENT-XBOX-TESTING.md#fixed-controller-wiring-and-current-test-loop).
+Keep the original four labelled Wi-Fi S3 assignments. Enable
+`CONFIG_KVM_XBOX_S3_PLAYER1` and `CONFIG_KVM_XBOX_DIRECT_PLAYER1` together
+for automatic P1 switching: configured DEVICE USB takes priority, and P1
+returns to its S3 when that cable is removed. P2-P4 keep their own S3 routes.
+The LCD keeps a compact four-controller status row and readable ESP LAN IPs;
+tap a player for its IP, counters and input details. Unseen/stale slots stay
+visible without covering the game with diagnostic cards. See the [agent hardware/test-loop entrypoint](docs/AGENT-XBOX-TESTING.md#fixed-controller-wiring-and-current-test-loop).
 
-**Previously validated all-S3 configuration:** Each Waveshare ESP32-S3-Zero emulates one Xbox
+**Previously validated all-S3 configuration:** each Waveshare ESP32-S3-Zero emulates one Xbox
 controller, receiving full-resolution state from the main KVM over home Wi-Fi.
 For player 1, all buttons, trigger pressure, both stick axes and circular sweeps were checked
 in Xbox Controller Tool: [164-state hardware validation](docs/S3-PLAYER1-VALIDATION.md).
@@ -82,8 +102,12 @@ Guilty Gear Isuka four-player match:
 
 ## For coding agents in other game repositories
 
-Start with the [shared hardware and test-loop entrypoint](docs/AGENT-XBOX-TESTING.md).
-Keep game build/deploy instructions in the game repository.
+Start with the [agent testing entrypoint](docs/AGENT-XBOX-TESTING.md). The
+[reusable Xbox hardware-testing skill](agent-skills/xbox-hardware-testing/SKILL.md)
+routes agents to the shared tools and current hardware limits while keeping
+game build/deploy instructions in the game's own repo. Local user-level pointers
+are installed for Codex and Claude Code on this Mac; another machine needs its
+own skill/instruction installation.
 
 ## Build and use
 

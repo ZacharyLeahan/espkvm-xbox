@@ -92,7 +92,6 @@ static int64_t s_idle_us;
 static uint32_t s_lcd_updates;
 static unsigned s_lcd_fps10;
 static atomic_uint s_ui_mode = LCD_UI_STATS;
-static atomic_uint s_bar_margin = 16;
 static unsigned s_draw_mode = LCD_UI_STATS;
 static bool s_show_stats = true;
 static atomic_int s_player_selected = -1;
@@ -124,7 +123,8 @@ static void draw_players(void)
 {
     if(!s_show_stats)return;
     capture_lcd_players_t players;capture_lcd_players_state(&players);
-    lcd_players_draw(s_fb,&players,atomic_load(&s_player_selected));
+    int selected=atomic_load(&s_player_selected);
+    lcd_players_draw(s_fb,&players,selected);
 }
 static i2c_master_dev_handle_t s_touch;
 static uint16_t s_touch_w = LCD_W, s_touch_h = LCD_H;
@@ -229,7 +229,7 @@ static void touch_task(void *arg)
                     capture_lcd_record_toggle();
                     menu_gesture = true;
                 } else if (press && !hit && count == 1 && x<LCD_W &&
-                           lcd_ui_cycle_hit(mode,y,atomic_load(&s_bar_margin))) {
+                           lcd_ui_cycle_hit(x,y)) {
 #if CONFIG_KVM_USB_XBOX
                     mode = lcd_ui_next(mode,record.recording || record.busy);
 #else
@@ -404,6 +404,7 @@ void capture_dsi_preview_tick(uint32_t completed)
 #endif
         /* A slate cleared this buffer; reinitialize letterboxing on recovery. */
         s_clear_buffer[s_draw_index] = true;
+        lcd_ui_cycle_draw(s_fb,s_record.recording || s_record.busy);
         submit_preview();
     }
 #else
@@ -672,7 +673,7 @@ static esp_err_t icn6211_disable_bist(void)
     return ESP_OK;
 }
 
-static void icn6211_inspect_video(void)
+static void icn6211_inspect_video(bool readable)
 {
     /* Generic read responses require command mode on this host. Stop DPI
      * first so its DMA source does not continue feeding a stopped video sink. */
@@ -688,38 +689,44 @@ static void icn6211_inspect_video(void)
     if (esp_task_wdt_status(NULL) == ESP_OK) {
         esp_task_wdt_reset();
     }
-    log_dsi_link("before paused bridge read");
+    log_dsi_link(readable ? "before paused bridge read" : "before fallback resync");
     mipi_dsi_brg_ll_enable_dpi_output(&MIPI_DSI_BRIDGE, false);
     mipi_dsi_brg_ll_update_dpi_config(&MIPI_DSI_BRIDGE);
     vTaskDelay(pdMS_TO_TICKS(20));
     mipi_dsi_host_ll_enable_video_mode(&MIPI_DSI_HOST, false);
     vTaskDelay(pdMS_TO_TICKS(20));
-    static const uint8_t regs[] = {0x00, 0x01, 0x02, 0x2a, 0x80, 0x81,
-                                   0x84, 0x85, 0x86, 0x87, 0x56, 0x69, 0x6b, 0x7a};
-    uint8_t bist = 0;
-    for (size_t i = 0; i < sizeof(regs); ++i) {
-        uint8_t value;
-        esp_err_t err = icn6211_read_register(regs[i], &value);
-        if (err != ESP_OK) {
-            ESP_LOGW(TAG, "paused ICN6211 0x%02x: %s", regs[i], esp_err_to_name(err));
-            break;
+    /* Preserve the same settling and resynchronization on the write-only
+     * fallback, without reintroducing the BTA timeout that required it. */
+    if (readable) {
+        static const uint8_t regs[] = {0x00, 0x01, 0x02, 0x2a, 0x80, 0x81,
+                                       0x84, 0x85, 0x86, 0x87, 0x56, 0x69, 0x6b, 0x7a};
+        uint8_t bist = 0;
+        for (size_t i = 0; i < sizeof(regs); ++i) {
+            uint8_t value;
+            esp_err_t err = icn6211_read_register(regs[i], &value);
+            if (err != ESP_OK) {
+                ESP_LOGW(TAG, "paused ICN6211 0x%02x: %s", regs[i], esp_err_to_name(err));
+                break;
+            }
+            ESP_LOGI(TAG, "paused ICN6211 0x%02x = 0x%02x", regs[i], value);
+            if (regs[i] == 0x2a) {
+                bist = value;
+            }
         }
-        ESP_LOGI(TAG, "paused ICN6211 0x%02x = 0x%02x", regs[i], value);
-        if (regs[i] == 0x2a) {
-            bist = value;
-        }
-    }
 #if CONFIG_KVM_DSI_PREVIEW_ICN6211_MIPI_PLL
-    if (bist & 0x08) {
-        esp_err_t err = icn6211_write_register(0x7a, 0xc1);
-        if (err == ESP_OK) {
-            err = icn6211_write_register(0x2a, bist & ~0x08u);
+        if (bist & 0x08) {
+            esp_err_t err = icn6211_write_register(0x7a, 0xc1);
+            if (err == ESP_OK) {
+                err = icn6211_write_register(0x2a, bist & ~0x08u);
+            }
+            ESP_LOGI(TAG, "post-video BIST clear: %s", esp_err_to_name(err));
         }
-        ESP_LOGI(TAG, "post-video BIST clear: %s", esp_err_to_name(err));
-    }
 #else
-    (void)bist;
+        (void)bist;
 #endif
+    } else {
+        ESP_LOGI(TAG, "LCD fallback resync: paused/resumed without register reads");
+    }
     mipi_dsi_host_ll_enable_video_mode(&MIPI_DSI_HOST, true);
     mipi_dsi_brg_ll_enable_dpi_output(&MIPI_DSI_BRIDGE, true);
     mipi_dsi_brg_ll_update_dpi_config(&MIPI_DSI_BRIDGE);
@@ -729,10 +736,13 @@ static void icn6211_inspect_video(void)
 static esp_err_t icn6211_configure_mipi_pll(bool verify)
 {
     /* ICN6211's configuration tool and Linux driver use 0xc1 to permit DSI
-     * writes. At 576 Mb/s the PLL reference is 144 MHz. P=6, M=16, S=16
-     * gives the panel's existing 24 MHz pixel clock. Geometry stays intact. */
+     * writes. At 576 Mb/s the PLL reference is 144 MHz. P=12, M=32, S=16
+     * keeps the divided reference at 12 MHz (Linux uses 5..20 MHz) and
+     * preserves the 384 MHz VCO and 24 MHz pixel clock. The old P=6/M=16
+     * pair produced the same output but a 24 MHz divided reference, outside
+     * that range. 0x76 encodes P=(6*2), S=2^(3+1). */
     static const uint8_t setup[][2] = {
-        {0x7a, 0xc1}, {0x6b, 0x73}, {0x69, 0x10},
+        {0x7a, 0xc1}, {0x6b, 0x76}, {0x69, 0x20},
         {0x56, 0x92}, {0x09, 0x10},
     };
     for (size_t i = 0; i < sizeof(setup) / sizeof(setup[0]); ++i) {
@@ -917,7 +927,7 @@ static esp_err_t preview_start_once(unsigned attempt)
     log_dsi_link("startup");
     ESP_LOGI(TAG, "Waveshare 3.5 DSI preview started: 640x480 RGB888, viewer-aware budget");
 #if CONFIG_KVM_DSI_PREVIEW_ICN6211_DISABLE_BIST
-    if (bridge_readable) icn6211_inspect_video();
+    icn6211_inspect_video(bridge_readable);
 #endif
     /* Framebuffer zero is on screen; prepare the first live frame in one. */
     s_draw_index = 1;
@@ -941,7 +951,12 @@ void capture_dsi_preview_init(void)
     if (s_bus) {
         return;
     }
-    for (unsigned attempt = 1; attempt <= 3; ++attempt) {
+    unsigned first_attempt = 1;
+#if CONFIG_KVM_DSI_PREVIEW_FORCE_FALLBACK
+    first_attempt = 3;
+    ESP_LOGW(TAG, "LCD diagnostic: forcing write-only fallback; read-capable attempts skipped");
+#endif
+    for (unsigned attempt = first_attempt; attempt <= 3; ++attempt) {
         if (esp_task_wdt_status(NULL) == ESP_OK) {
             esp_task_wdt_reset();
         }
@@ -1090,9 +1105,6 @@ void capture_dsi_preview_frame(const void *src, uint32_t width, uint32_t height,
     }
     const uint32_t x0 = (LCD_W - out_w) / 2u;
     const uint32_t y0 = (LCD_H - out_h) / 2u;
-#if CONFIG_KVM_DSI_STATUS_STRIP
-    atomic_store(&s_bar_margin,y0);
-#endif
     if (width != s_last_w || height != s_last_h) {
         for (unsigned i = 0; i < LCD_BUFFERS; ++i) {
             s_clear_buffer[i] = true;
@@ -1144,6 +1156,9 @@ void capture_dsi_preview_frame(const void *src, uint32_t width, uint32_t height,
     }
     if (s_draw_mode==LCD_UI_INPUTS) draw_input_strip();
 #endif
+#endif
+#if CONFIG_KVM_DSI_STATUS_STRIP
+    lcd_ui_cycle_draw(s_fb,s_record.recording || s_record.busy);
 #endif
     if (!submit_preview()) return;
 #if CONFIG_KVM_DSI_STATUS_STRIP

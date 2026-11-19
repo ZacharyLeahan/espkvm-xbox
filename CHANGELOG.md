@@ -7,22 +7,61 @@ bumps the patch).
 
 ## [Unreleased]
 
+- Keep P1 DIRECT USB alongside Wi-Fi P2-P4 with opt-in mixed routing. Show all
+  four player status tiles and ESP LAN IPs in a compact LCD header. Open
+  controller IPs, report counters and input details only after a tile tap;
+  retain offline/stale slots and independent input expiry.
+
+- Document fixed direct DEVICE USB player-one wiring, intended Wi-Fi P2-P4, current routing limits, and fresh-video test-loop guidance for other game repositories.
+
+- Show direct DEVICE USB controller routing and live host transfer telemetry on the LCD when S3 routing is disabled.
+
 ### Fixed
 
-- Automatically select configured DEVICE USB for Xbox P1 and fall back to its
-  paired S3 without draining logical input or interrupting Wi-Fi P2-P4. Show
-  the selected transport and LAN addresses in the compact controller overlay.
-- Bind S3 report output and diagnostics to the preferred live interface when
-  Ethernet and Wi-Fi share a subnet; retain discovery on both links.
-- Retry unconfigured, unsuspended Xbox USB enumeration with bounded backoff in
-  main and S3 firmware. S3 recovery requires firmware 0.2.2 installed over USB.
+- Retry unconfigured Xbox USB enumeration with a one-second detach and bounded
+  backoff in main/S3 firmware; leave configured or suspended hosts alone. S3
+  receivers need firmware 0.2.2 installed over USB for this recovery behavior.
 
-### Documentation
+- Keep the original four S3 player assignments in mixed mode and automatically
+  switch P1 between configured DEVICE USB and its paired Wi-Fi receiver. Show
+  the selected transport on the LCD and web details. Keep logical input alive
+  across direct USB disconnect/reset, including agent target-readiness checks.
 
-- Record fixed DEVICE USB player-one wiring, intended Wi-Fi P2-P4, current
-  firmware limits and fresh-video test-loop guidance for other game repos.
+- Keep Wi-Fi controller reports and receiver diagnostics on the preferred live
+  network interface when Ethernet and Wi-Fi share a subnet. Preserve discovery
+  on both links and follow default-interface changes without a KVM restart.
+
+- Show separate Wi-Fi freshness and USB connection status on the four
+  touchscreen player tiles; keep network text clear of the taller tiles.
+
+- Adjust the experimental ICN6211 LCD PLL predivider/multiplier to keep its
+  divided reference within the Linux driver's 5..20 MHz range while preserving
+  the existing pixel/VCO clocks. Hardware stability validation is pending.
+
+- Label LCD adapter telemetry as logical routes rather than physical Xbox ports.
+  Log adapter USB transitions and stale/recovered telemetry with the physical
+  port limitation explicit. Document the missing topology signal and mixed
+  direct/Wi-Fi routing requirement in docs/XBOX-PORT-DETECTION.md.
 
 ### Added
+
+- Add a persistent bottom-right VIEW arrow to cycle touchscreen overlays,
+  replacing hidden top/bottom tap areas. Show REC LOCK during recording.
+
+- Show Ethernet and Wi-Fi LAN addresses on the touchscreen stats views, with
+  a no-address indicator while disconnected and updates after network changes.
+
+- Add an nxdk diagnostic title with advancing frame/time counters, per-port
+  input acknowledgments/releases and fixed reference colors. Decode its CRC32
+  visual panel through existing KVM screenshots and integrate progress/input
+  assertions into scenarios. Add one-/four-player diagnostic plans and host
+  synthetic-image/protocol/integration tests. Credit OXOS's diagnostic-title
+  techniques; physical-console validation remains pending.
+
+- Add a host-side Xbox scenario runner for reviewed controller sequences,
+  repeated runs, timestamped screenshot/status evidence, exact video-field
+  checks and stop-on-failure/manual recovery. Credit kooscode/OXOS's repeat-boot
+  workflow as design inspiration; no source copied or power control added.
 
 - Add compact P1-P4 connection/activity indicators to the web console and LCD,
   with click/tap details, stale-discovery warnings and timestamped receiver USB
@@ -62,6 +101,10 @@ bumps the patch).
   disconnect counts; leave it disabled by default to avoid playback overhead.
 
 ### Documentation
+
+- Add a shared Xbox game-agent testing entrypoint and reusable hardware-testing
+  skill, with cross-repo discovery instructions for Codex and Claude Code and
+  explicit separation of game validation from diagnostic-title checks.
 
 - Add a concise four-player architecture explainer linking the wireless controller
   dongles, capture feedback, verified gameplay and multiplayer testing goals.

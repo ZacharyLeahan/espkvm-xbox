@@ -18,10 +18,9 @@ static inline unsigned lcd_ui_next(unsigned mode, bool locked)
     return locked ? mode : (mode + 1) % 4;
 #endif
 }
-static inline bool lcd_ui_bar(unsigned y, unsigned margin)
-{ if (margin < 16) margin = 16; return y < margin || (y < 480 && y >= 480-margin); }
-static inline bool lcd_ui_cycle_hit(unsigned mode,unsigned y,unsigned margin)
-{ return lcd_ui_bar(y,margin) || (mode==LCD_UI_INPUTS && y>=448 && y<480); }
+/* Keep navigation separate from the pad, player tiles and record button. */
+static inline bool lcd_ui_cycle_hit(unsigned x,unsigned y)
+{ return x>=504 && x<632 && y>=436 && y<476; }
 /* Fit recent complete events in one bottom-edge line; discard oldest events
  * rather than chopping a button name or shrinking the gameplay image. */
 static inline void lcd_input_recent(const char rows[3][48],char text[51])
@@ -87,6 +86,19 @@ static inline void lcd_pad_text(uint8_t *fb,unsigned x,unsigned y,const char *s)
 {
     for(unsigned i=0;s[i];i++) for(unsigned c=0;c<5;c++) for(unsigned r=0;r<7;r++)
         if(font5x7[(unsigned char)s[i]-32][c] & (1u<<r)) lcd_pad_rect(fb,x+i*12+c*2,y+r*2,2,2,240);
+}
+static inline void lcd_ui_cycle_draw(uint8_t *fb,bool locked)
+{
+    lcd_pad_rect(fb,504,436,128,40,180);
+    lcd_pad_rect(fb,506,438,124,36,28);
+    lcd_pad_text(fb,516,449,locked ? "REC LOCK" : "VIEW");
+    if (!locked) {
+        lcd_pad_rect(fb,576,455,32,4,240);
+        for (unsigned i=0;i<12;i++) {
+            lcd_pad_rect(fb,606-i,455-i,4,4,240);
+            lcd_pad_rect(fb,606-i,455+i,4,4,240);
+        }
+    }
 }
 static inline void lcd_pad_draw(uint8_t *fb)
 {
