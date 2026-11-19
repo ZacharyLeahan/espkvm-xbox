@@ -1,7 +1,20 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 # Four-player controller status
 
-The web header and touchscreen stats view show a compact P1-P4 row. It appears
+The touchscreen default keeps a compact row for P1 DIRECT USB and Wi-Fi P2-P4,
+with the ESP Ethernet/Wi-Fi addresses below it. The game remains visible beneath
+this header. Tap a controller tile for its IP, USB state, report counters,
+activity and held inputs; tap again or tap the detail panel to close it. ESP LAN
+addresses remain visible while details are open. Unseen/stale adapters remain
+in the row; unknown USB state is not an empty-port claim. Direct DEVICE USB is always physical P1 under the standing
+operator wiring contract. Enable both `CONFIG_KVM_XBOX_S3_PLAYER1` and
+`CONFIG_KVM_XBOX_DIRECT_PLAYER1` for automatic P1 selection alongside Wi-Fi P2-P4.
+P1 uses configured DEVICE USB when available and its original paired S3 otherwise.
+The standby S3 remains discovered with neutral input. Disconnecting/resetting
+DEVICE USB cannot drain the logical P1 input queue or release P2-P4. The LCD
+changes P1 DIRECT/WIFI with the selected transport. See [current wiring and modes](AGENT-XBOX-TESTING.md#fixed-controller-wiring-and-current-test-loop).
+
+In all-S3 mode, the web header and touchscreen stats view show a compact P1-P4 row. It appears
 only on firmware with S3 routing enabled. Click a web indicator, or tap the
 LCD row, for details; tap the same indicator or the LCD details panel to close.
 The LCD overlay is drawn only on its own framebuffer, not the captured game.
@@ -31,11 +44,19 @@ supplemental trusted-LAN observations; they do not authenticate or authorize
 control. Fresh signed discovery takes precedence over diagnostic USB state.
 No dongle firmware update or REST endpoint change is required.
 
+Controller UDP output and receiver HTTP diagnostics explicitly follow the
+default live network interface. Discovery remains unbound so announcements can
+arrive on either LAN link. With Ethernet and Wi-Fi on the same subnet, lwIP's
+first subnet match can otherwise bypass Ethernet's higher route priority.
+The output socket and persistent diagnostic clients follow interface changes;
+receiver identities, authentication and input-expiry rules stay the same.
+
 The existing authenticated `/ws` status reply gains a second binary message:
 `0x85` followed by UTF-8 JSON containing four objects in player order. Fields:
 
 | Field | Meaning |
 | --- | --- |
+| `transport` | Selected `direct` or `wifi` output; optional for older firmware |
 | `player`, `configured`, `seen`, `ip` | Slot 1-4, pairing present, authenticated discovery observed, learned address |
 | `connection` | 0 not seen/unpaired; 1 reachable, USB waiting; 2 USB configured; 3 status stale |
 | `held` | Main ESP's latest sent input label; very small stick values use `ANALOG` |
@@ -52,6 +73,100 @@ connection or three seconds without a fresh status message. The input pulse
 lasts up to one second; reachability samples expire after four seconds.
 
 ## Verification
+
+### Physical placement and mixed-mode check (2026-11-09)
+
+After restoring power, all four S3s configured and advanced Xbox USB completions.
+A 60-second sample showed 2,067 new sends per route, zero new send errors, and
+about 6,000 Xbox completions per player. Initial logical-P1 Wi-Fi XBMC navigation
+passed fresh screenshot review; that alone did not prove a physical socket.
+
+The operator's physical P1 cable swap exposed different placement from the old
+inventory map. `.243` (d4:05:92:44:aa:94) disappeared, while `.242`
+(ac:27:6e:b0:ce:a4) stayed USB-active. The saved profile and installed main
+firmware now assign physical P1 to `.243` and P2 to `.242`, leaving P3/P4 as
+before. See [placement evidence](XBOX-PORT-DETECTION.md#current-placement-calibration-2026-11-09).
+An absent standby P1 is no longer continuously retried while direct P1 is active;
+fresh signed discovery resumes its neutral refresh.
+
+Corrected mixed mode passed a 14.5-second sample: direct P1 completed 1,445 USB
+reports; Wi-Fi P2/P3/P4 advanced by 1,401/1,575/1,574 completions, with zero new
+send errors and fresh telemetry throughout. Physical direct P1 and logical
+P2-P4 each navigated XBMC Games/Movies/Games in bounded, released-input tests.
+The P2-P4 reviewed repeat used 200 ms presses and 2 s capture settling; the
+shorter visually inconsistent attempt remains inconclusive. Earlier direct
+screenshots without an active stream were excluded as stale.
+
+Current state: direct P1, Wi-Fi P2-P4, Games selected, all input released.
+The operator's swap back to the P1 S3 and its overlay recovery are still pending.
+These results do not qualify a game, latency, analog sweeps or long-term
+wireless reliability. Evidence: `observations/controller-ready-20261109/`.
+
+### Automatic P1 selection (2026-11-06)
+
+Main KVM firmware is installed with the four original receiver identities and
+automatic P1 selection. Live status reports Wi-Fi P1 at `.242`, P2 at `.243`,
+P3 at `.244`, P4 at `.246`; every route advances network sends. P1/P2 currently
+report USB unconfigured, while P3/P4 advance Xbox USB completions. The overlay
+now consumes the resolved transport instead of overwriting P1 as DIRECT.
+
+All 85 browser tests and the production browser build passed. ASan/UBSan host
+tests passed P1 source selection, unchanged P2-P4 overlay tiles through P1
+switches, USB retry timing and suspended/configured-host protection. Main and
+S3 firmware builds passed; no new warnings in changed sources. The full main
+rebuild retains an existing unused-function warning in ESP-Hosted.
+
+Main USB recovery is installed and its first delayed enumeration retry is
+visible in the boot log. S3 0.2.2 is built but requires physical USB flashing;
+the running 0.2.1 receivers cannot accept a network update or USB-reset command.
+P1 Wi-Fi/direct hot switching, recovery of P1/P2 and game input are not yet
+hardware-qualified. Private evidence: `observations/p1-auto-switch-20261106/`.
+
+USB flashing follow-up: the connected adapter was positively identified as
+original P2 (`d4:05:92:44:aa:94`), backed up in full, then flashed with 0.2.2.
+All three written regions passed hash verification. Its HTTP status confirmed
+0.2.2 booted and rejoined Wi-Fi at `.243`. The USB host for that sample was the
+Mac, so this does not verify Xbox enumeration or input. P1 still needs flashing;
+the main KVM was unreachable during this physical cable swap. Evidence:
+`observations/p1-auto-switch-20261106/p2-flash/`.
+
+P1 flashing follow-up: original P1 (`ac:27:6e:b0:ce:a4`) was also backed up and
+flashed with 0.2.2; all three regions passed hash verification. Esptool reported
+a serial-port error during the final watchdog reset, but HTTP independently
+confirmed 0.2.2 booted at `.242`. That USB host was still the Mac. P2, returned
+to Xbox P2 by the operator, reported configured USB with completion counts
+advancing from 2,480 to 6,193. The main KVM remains unreachable during the cable
+swap; four-route network qualification and physical P1 handoff await restored
+main power and P1's return to the Xbox. P3/P4 remain on 0.2.1. Evidence:
+`observations/p1-auto-switch-20261106/p1-flash/`.
+
+### Dual-link routing repair (2026-11-06)
+
+On the mixed P1/P2-P4 rig, all three S3 receivers were discoverable and
+USB-configured but their routing leases expired. Main-ESP sends stopped
+advancing after about 275 reports per receiver, and send errors kept growing.
+A restart reproduced the failure when Wi-Fi acquired its IPv4 address.
+Temporary diagnostics confirmed successful HMAC signing and `sendto()` failing
+with `ENOMEM`; the allocation-failure hook recorded no failed heap allocations.
+That errno alone was not evidence that the general heap was exhausted.
+
+Explicit default-interface binding restored delivery through Ethernet (`en1`)
+with both LAN interfaces active. The firmware build passed without compiler
+warnings and was installed through the verified OTA path. The first 60-second
+startup sample showed all receiver leases active at both endpoints and advancing
+USB completions, with brief send-queue congestion followed by automatic recovery.
+In the second 60-second run, P1 completed 5,891 reports; P2/P3/P4 sent
+2,093/2,092/2,077 packets and their USB completion counts advanced by
+5,950/5,775/5,775. All receiver leases were active at both endpoints and final
+diagnostic ages were below 1.7 seconds. The strict zero-send-error check failed:
+P2/P3/P4 recorded 8/9/24 transient errors, followed by continued successful sends.
+This restores the formerly stuck routes; it does not establish zero congestion.
+This is transport evidence, not four-player game qualification. Physical network
+failover and standalone Wi-Fi reliability were not exercised in this repair.
+Private logs, firmware hash and status samples are under
+`observations/controller-route-repair-20261106/`.
+
+### Earlier status checks
 
 - Console typechecking, production build, and all 84 console tests passed.
 - Host tests cover never-seen state, stale discovery with fresh diagnostics,

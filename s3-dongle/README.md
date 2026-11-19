@@ -25,6 +25,19 @@ with authenticated Wi-Fi state. Both ends release stale input after 500 ms.
 The Xbox readiness flag follows player 1's signed announcement of configured USB.
 Players 2..4 have independent discovery, replay state, queues and timeouts.
 
+## Automatic P1 switching and USB recovery
+
+Keep the original four labelled S3 player assignments, including P1. The main
+KVM's `KVM_XBOX_DIRECT_PLAYER1` option prefers configured DEVICE USB for P1 and
+otherwise sends P1 to its original S3. The standby S3 receives neutral reports;
+P2-P4 are independent. Do not remap the P1 adapter to P2 for mixed mode.
+
+Firmware 0.2.2 adds automatic USB re-enumeration if the Xbox has not configured
+the adapter: wait ten seconds, detach for one second, reconnect, then back off
+subsequent attempts to 20/40/60 seconds. Configured and suspended hosts are not
+reset. Wi-Fi discovery/input continues independently. Install this firmware over
+USB; 0.2.1 has no network firmware-update or USB-reset endpoint.
+
 ## Configure, build, flash
 
 Copy the root `.env.example` to ignored `.env` and enter the home Wi-Fi network.

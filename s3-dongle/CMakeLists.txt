@@ -7,4 +7,4 @@ if(S3_USE_PARENT_TINYUSB AND EXISTS "${CMAKE_CURRENT_LIST_DIR}/../managed_compon
 endif()
 set(COMPONENTS main)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(xbox_s3_dongle VERSION 0.2.1)
+project(xbox_s3_dongle VERSION 0.2.2)

@@ -3116,6 +3116,7 @@ static void ws_send_controllers_to(int fd)
         cJSON_AddNumberToObject(item,"connection",xbox_controller_connection(s,now));
         cJSON_AddStringToObject(item,"ip",s->ip);
         cJSON_AddStringToObject(item,"held",s->held);
+        cJSON_AddStringToObject(item,"transport",s->direct_usb?"direct":"wifi");
         cJSON_AddNumberToObject(item,"beaconAgeMs",xbox_controller_age(s->beacon_at,now));
         cJSON_AddNumberToObject(item,"diagnosticAgeMs",xbox_controller_age(s->diagnostic_at,now));
         cJSON_AddNumberToObject(item,"activityAgeMs",xbox_controller_age(s->activity_at,now));

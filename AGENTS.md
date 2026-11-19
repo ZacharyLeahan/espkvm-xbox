@@ -161,3 +161,38 @@ docs/             HARDWARE-NOTES.md (measured facts), PORTING.md
 - Test on real hardware where it matters (video, HID, TLS, virtual media). The
   device is attached to this machine; `curl -k https://espkvm.local/` reaches it.
 - For the console, `npm run typecheck` and a look in a browser.
+
+## Fixed Xbox player wiring
+
+- Standing operator rule: main ESP **DEVICE USB always connects to physical
+  Xbox P1**, never P2-P4. Assume P1 whenever connected; do not ask the operator
+  to rediscover the socket. Four S3 receivers retain the saved, physically verified P1-P4 assignments.
+- For mixed routing enable `CONFIG_KVM_USB_XBOX`, `CONFIG_KVM_XBOX_S3_PLAYER1`
+  and `CONFIG_KVM_XBOX_DIRECT_PLAYER1`: configured DEVICE USB takes P1; when
+  disconnected, its original paired S3 takes P1 automatically. Keep all four
+  physically verified S3 identities configured. Never change assignments merely
+  to accommodate the direct cable. Historical inventory labels are not physical
+  socket discovery; the 2026-11-09 cable-swap check established current P1 as
+  d4:05:92:44:aa:94 and P2 as ac:27:6e:b0:ce:a4. The standby P1 S3 receives neutral reports. Without the
+  direct-P1 option, S3 mode retains all-S3 behavior. Direct-only mode drives P1.
+- Keep the LCD default compact: all four player status tiles and ESP LAN IPs
+  remain visible, with controller IPs/counters/input details behind a tile tap.
+  Unseen/stale telemetry is not proof of an empty physical port.
+- The wiring rule supplies the P1 assignment; USB telemetry supplies live
+  connection/transfer state. Neither implies that a game handled the input.
+- For other repositories and test-loop details, keep
+  [the shared entrypoint](docs/AGENT-XBOX-TESTING.md) authoritative. Activate
+  `/stream` before reviewing MJPEG stills: idle snapshots can be old even when
+  raw capture counters advance. Do not diagnose a freeze from those stills.
+
+## Xbox scenario and diagnostic tools
+
+For agents developing games in this or another repository, start with
+[docs/AGENT-XBOX-TESTING.md](docs/AGENT-XBOX-TESTING.md). Use the existing scenario
+runner for reviewed repeatable inputs/evidence, and the standalone diagnostic
+XBE for XKD1 progress/input assertions. Generic game evidence remains
+INCONCLUSIVE; PASS_DIAGNOSTIC covers only the dedicated diagnostic title.
+The new runner/visual title are host-tested and build-tested, not yet validated
+on the physical Xbox. No physical power recovery or commissioned XBDM/serial
+workflow is provided by these tools. The reusable cross-repository skill lives
+in [agent-skills/xbox-hardware-testing/SKILL.md](agent-skills/xbox-hardware-testing/SKILL.md).

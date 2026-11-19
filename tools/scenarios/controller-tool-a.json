@@ -1,0 +1,9 @@
+{
+  "name": "controller-tool-a",
+  "start_state": "Xbox Controller Tool Control Test Page open; all controllers neutral. Each repeat starts and ends on this page.",
+  "steps": [
+    {"name": "baseline", "expect": {"signal": true}, "screenshot": true},
+    {"name": "press-a", "buttons": ["a"], "player": 1, "hold_ms": 200},
+    {"name": "released", "wait_ms": 750, "expect": {"signal": true}, "screenshot": true}
+  ]
+}

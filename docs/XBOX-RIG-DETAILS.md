@@ -27,12 +27,33 @@ Our setup uses an **ESP32-P4 Function EV board** (P4 rev 3.2, C6 Wi-Fi), **Geekw
 
 - **Video:** Xbox HDMI → C790 → ESP **MIPI CAMERA**. Optional ESP **MIPI DISPLAY** → LCD. Power off before handling ribbons and check contact orientation.
 - **Audio:** C790 I2S → four ESP header connections. Use the [verified Function EV wiring and audio settings](HDMI-AUDIO.md#header-cross-check-2026-10-16).
-- **Controller:** Xbox controller port → female USB adapter → USB-A-to-USB-C data cable → ESP **DEVICE USB**. The firmware provides XID emulation; the adapter is just a cable.
+- **Controller:** Xbox **player 1** controller port → female USB adapter → USB-A-to-USB-C data cable → ESP **DEVICE USB**. The firmware provides XID emulation; the adapter is just a cable.
 - **Power/flashing:** use **USB-Serial-JTAG**. This is separate from the controller connection.
 
 The Waveshare screen works in this fork but is not a vendor-supported configuration. LCD setup and investigation are in [DSI-PREVIEW.md](DSI-PREVIEW.md).
 
-## Planned: four-player wireless homebrew testing
+## Standing player assignment and firmware modes
+
+DEVICE USB is always wired to physical Xbox P1 by operator convention; never
+ask which port or assume it can be on P2-P4. Optional Wi-Fi S3 adapters are
+labelled P1-P4, with the P1 S3 used when DEVICE USB is disconnected. This fixed assignment does not depend on automatic USB port
+detection. Live enumeration and host completion counts still determine whether
+the connection is operational.
+
+Mixed routing is enabled with `CONFIG_KVM_XBOX_S3_PLAYER1=y` and
+`CONFIG_KVM_XBOX_DIRECT_PLAYER1=y`: DEVICE USB remains P1 and the paired S3
+receivers keep all four original identities. The direct-P1 option automatically
+uses the P1 S3 whenever DEVICE USB is not configured. While direct P1 is active,
+its standby S3 remains discovered and receives neutral input. Plain direct and
+all-S3 builds remain supported. The LCD shows every route in a compact row, including unseen/stale adapters,
+with ESP LAN IPs always visible and per-controller details behind a tap. On 2026-11-05 all four routes were USB-configured simultaneously and Xbox
+completion counters advanced for direct P1 and Wi-Fi P2-P4 in one passive sample
+window. This validates simultaneous transport, not game-specific behavior.
+Direct P1 navigated XBMC and opened Controller Tool on 2026-11-04; the LCD showed
+USB ON and the operator confirmed advancing Xbox report completions. Follow
+[the shared test loop and fresh-capture precautions](AGENT-XBOX-TESTING.md#fixed-controller-wiring-and-current-test-loop).
+
+## Previously validated four-S3 homebrew testing
 
 The next unlock is **agents in the loop for all four players on the real Xbox**:
 exercise multiplayer interactions in homebrew games, reproduce simultaneous

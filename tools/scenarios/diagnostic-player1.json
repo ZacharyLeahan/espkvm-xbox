@@ -1,0 +1,60 @@
+{
+  "name": "diagnostic-player1",
+  "start_state": "ESP-KVM Diagnostic XKD1 title running, all controllers neutral, requested physical ports connected; no competing controller session.",
+  "steps": [
+    {
+      "name": "live-reference",
+      "diagnostic": true
+    },
+    {
+      "name": "player-1-a",
+      "buttons": [
+        "a"
+      ],
+      "player": 1,
+      "hold_ms": 250,
+      "wait_ms": 200,
+      "diagnostic": true
+    },
+    {
+      "name": "player-1-b",
+      "buttons": [
+        "b"
+      ],
+      "player": 1,
+      "hold_ms": 250,
+      "wait_ms": 200,
+      "diagnostic": true
+    },
+    {
+      "name": "player-1-up",
+      "buttons": [
+        "up"
+      ],
+      "player": 1,
+      "hold_ms": 250,
+      "wait_ms": 200,
+      "diagnostic": true
+    },
+    {
+      "name": "player-1-lt",
+      "buttons": [
+        "lt"
+      ],
+      "player": 1,
+      "hold_ms": 250,
+      "wait_ms": 200,
+      "diagnostic": true
+    },
+    {
+      "name": "player-1-rt",
+      "buttons": [
+        "rt"
+      ],
+      "player": 1,
+      "hold_ms": 250,
+      "wait_ms": 200,
+      "diagnostic": true
+    }
+  ]
+}

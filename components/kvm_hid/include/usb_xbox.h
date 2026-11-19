@@ -17,3 +17,11 @@ void usb_xbox_remote_report(const uint8_t report[20]);
 
 /* Player is 1..4; slots 2..4 require S3 routing. */
 void usb_xbox_player_report(unsigned player,const uint8_t report[20]);
+
+/* Cached DEVICE USB telemetry, sampled on the USB task. */
+typedef struct {
+    bool connected, bus_alive;
+    uint32_t submitted, consumed;
+    int64_t completion_at;
+} usb_xbox_status_t;
+void usb_xbox_status(usb_xbox_status_t *out);
