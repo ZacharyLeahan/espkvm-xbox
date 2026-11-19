@@ -14,7 +14,9 @@ hex digits of the ELF SHA-256. The deployed build reporting
 [archived source snapshot](https://github.com/ZacharyLeahan/espkvm-xbox/commit/e34f216b51b49b122ec73ac4b3a07300ea0f06ce).
 The version names the checkout used at build time. Subsequent commits retain a
 larger LCD detail buffer. A rebuild from a clean commit has its own build ID.
-Private Wi-Fi and controller pairing settings are supplied locally.
+The deployed profile enables mixed USB/S3 routing, the DSI status strip and
+`CONFIG_KVM_DSI_PREVIEW_FORCE_FALLBACK=y`. Supply private Wi-Fi and controller
+pairing settings locally.
 
 ## Fixed controller wiring and current test loop
 

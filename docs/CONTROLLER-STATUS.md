@@ -113,7 +113,7 @@ shorter visually inconsistent attempt remains inconclusive. Earlier direct
 screenshots without an active stream were excluded as stale.
 
 Current state: direct P1, Wi-Fi P2-P4, Games selected, all input released.
-The operator's swap back to the P1 S3 and its overlay recovery are still pending.
+The operator confirmed that reconnecting the P1 S3 restored WIFI / USB ON. See the [final handoff verification](CONTROLLER-HANDOFF.md#hardware-verification-2026-11-09).
 These results do not qualify a game, latency, analog sweeps or long-term
 wireless reliability. Evidence: `observations/controller-ready-20261109/`.
 
