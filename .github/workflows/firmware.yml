@@ -115,7 +115,7 @@ jobs:
             git config --global --add safe.directory "$PWD" &&
             idf.py -B build.mixed-route-ci
             -D SDKCONFIG=build.mixed-route-ci/sdkconfig
-            -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;boards/funcev_p4.defaults;boards/funcev_xbox.defaults;tests/s3_route.defaults;tests/mixed_route.defaults"
+            -D SDKCONFIG_DEFAULTS="sdkconfig.defaults;boards/funcev_p4.defaults;boards/funcev_xbox.defaults;boards/funcev_dsi_live.defaults;tests/s3_route.defaults;tests/mixed_route.defaults"
             build
 
   # The console's own logic: the fake machine the demo runs on, the settings

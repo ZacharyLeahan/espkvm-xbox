@@ -6,6 +6,16 @@ game repos. Keep the game's own build/deploy instructions authoritative for its
 code, and use this entrypoint for the physical test rig. The published tooling
 repo is [ZacharyLeahan/espkvm-xbox](https://github.com/ZacharyLeahan/espkvm-xbox).
 
+## Identify the deployed mixed-USB firmware
+
+The KVM web root returns an ETag with the firmware version and the first eight
+hex digits of the ELF SHA-256. The deployed build reporting
+`v.0.56.1-180-g4d170a7-dirty-f2b88a83` corresponds to the
+[archived source snapshot](https://github.com/ZacharyLeahan/espkvm-xbox/commit/e34f216b51b49b122ec73ac4b3a07300ea0f06ce).
+The version names the checkout used at build time. Subsequent commits retain a
+larger LCD detail buffer. A rebuild from a clean commit has its own build ID.
+Private Wi-Fi and controller pairing settings are supplied locally.
+
 ## Fixed controller wiring and current test loop
 
 Zach's standing wiring rule (2026-11-04): **the main ESP DEVICE USB connection
@@ -37,7 +47,7 @@ private pairing profile and running main firmware now use this observed wiring;
 do not restore the old inventory mapping. Corrected mixed mode passed with
 DIRECT P1 and Wi-Fi P2-P4 all advancing, with zero new errors in a 14.5-second
 sample. Each P2-P4 also passed bounded XBMC navigation with 200 ms presses and
-2 s capture settling. Physical return from direct P1 to Wi-Fi is pending. These
+2 s capture settling. The operator also confirmed the return from direct P1 to Wi-Fi. See the [handoff verification](CONTROLLER-HANDOFF.md#hardware-verification-2026-11-09). These
 are rig checks; Super Mario War still requires its own game qualification. Evidence: `observations/controller-ready-20261109/`.
 
 Use a fresh video stream while reviewing input. The MJPEG still endpoint can
