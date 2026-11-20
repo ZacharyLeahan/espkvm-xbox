@@ -5,6 +5,17 @@
 
 typedef struct { int64_t retry_at,attach_at;unsigned attempts; } xbox_usb_recovery_t;
 enum { XBOX_USB_KEEP, XBOX_USB_DETACH, XBOX_USB_ATTACH };
+
+/* Start an operator-requested detach on the USB task. Resetting the automatic
+ * backoff gives the host the normal ten-second enumeration window afterward. */
+static inline void xbox_usb_recovery_request(xbox_usb_recovery_t *s,int64_t now,
+                                              int64_t off_us)
+{
+    s->retry_at=0;
+    s->attach_at=now+off_us;
+    s->attempts=0;
+}
+
 /* Called only on the USB task. Never disturb configured or suspended hosts.
  * A full second off-bus exceeds hub debounce; retries back off to one minute. */
 static inline unsigned xbox_usb_recovery_tick(xbox_usb_recovery_t *s,int64_t now,
@@ -13,7 +24,7 @@ static inline unsigned xbox_usb_recovery_tick(xbox_usb_recovery_t *s,int64_t now
     if(s->attach_at) {
         if(now<s->attach_at)return XBOX_USB_KEEP;
         s->attach_at=0;
-        unsigned seconds=s->attempts==1?20:s->attempts==2?40:60;
+        unsigned seconds=s->attempts==0?10:s->attempts==1?20:s->attempts==2?40:60;
         s->retry_at=now+(int64_t)seconds*1000000;
         return XBOX_USB_ATTACH;
     }

@@ -18,6 +18,11 @@ bumps the patch).
 
 ### Fixed
 
+- Detach the USB device cleanly before deliberate KVM restarts so an original
+  Xbox that remains powered does not retain a dead P1 controller state. Make
+  the operator USB-reattach action control the XID stack in Xbox mode instead
+  of returning without changing the bus.
+
 - Retry unconfigured Xbox USB enumeration with a one-second detach and bounded
   backoff in main/S3 firmware; leave configured or suspended hosts alone. S3
   receivers need firmware 0.2.2 installed over USB for this recovery behavior.
