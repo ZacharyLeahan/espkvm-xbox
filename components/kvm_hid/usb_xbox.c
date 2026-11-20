@@ -48,6 +48,10 @@ CFG_TUSB_MEM_SECTION static uint8_t s_out[64];
 static uint32_t s_sent;
 static portMUX_TYPE s_status_lock=portMUX_INITIALIZER_UNLOCKED;
 static usb_xbox_status_t s_usb_status;
+static xbox_usb_recovery_t s_recovery;
+static volatile bool s_manual_reattach;
+static volatile bool s_restart_requested;
+static volatile bool s_restart_detached;
 void usb_xbox_status(usb_xbox_status_t *out)
 {
     portENTER_CRITICAL(&s_status_lock);
@@ -285,12 +289,27 @@ static void xid_s3_pump(void)
 static void xid_pump(void *unused)
 {
     (void)unused;
-    static xbox_usb_recovery_t recovery;
-    unsigned action=xbox_usb_recovery_tick(&recovery,esp_timer_get_time(),
+    int64_t now=esp_timer_get_time();
+    if(s_restart_requested) {
+        if(!s_restart_detached) {
+            tud_disconnect();
+            s_restart_detached=true;
+            ESP_LOGI(TAG,"detached cleanly before KVM restart");
+        }
+        return;
+    }
+    if(s_manual_reattach) {
+        s_manual_reattach=false;
+        xbox_usb_recovery_request(&s_recovery,now,1000000);
+        ESP_LOGI(TAG,"operator reattach: one second off the Xbox bus");
+        tud_disconnect();
+        return;
+    }
+    unsigned action=xbox_usb_recovery_tick(&s_recovery,now,
         s_open && tud_mounted(),tud_suspended());
     if(action==XBOX_USB_DETACH) { ESP_LOGW(TAG,"USB not configured; retrying enumeration");tud_disconnect();return; }
     if(action==XBOX_USB_ATTACH) { tud_connect();return; }
-    if(recovery.attach_at)return;
+    if(s_recovery.attach_at)return;
     bool connected=s_open && tud_mounted() && !tud_suspended();
     portENTER_CRITICAL(&s_status_lock);
     s_usb_status.connected=connected;
@@ -330,6 +349,30 @@ static void xid_pump(void *unused)
     }
 }
 #endif
+
+void usb_xbox_reattach(void)
+{
+#if !CONFIG_KVM_XBOX_S3_PLAYER1 || CONFIG_KVM_XBOX_DIRECT_PLAYER1
+    if(s_queue)s_manual_reattach=true;
+#endif
+}
+
+void usb_xbox_prepare_restart(void)
+{
+#if !CONFIG_KVM_XBOX_S3_PLAYER1 || CONFIG_KVM_XBOX_DIRECT_PLAYER1
+    if(!s_queue)return;
+    s_restart_detached=false;
+    s_restart_requested=true;
+    for(unsigned i=0;i<25 && !s_restart_detached;i++)vTaskDelay(pdMS_TO_TICKS(10));
+    if(!s_restart_detached) {
+        ESP_LOGW(TAG,"USB task did not detach before restart; forcing disconnect");
+        tud_disconnect();
+    }
+    /* Let the Xbox host commit the removal before the P4 resets its USB core. */
+    vTaskDelay(pdMS_TO_TICKS(1000));
+#endif
+}
+
 static void xid_worker(void *arg)
 {
     (void)arg;

@@ -651,9 +651,27 @@ static void watchdog_cb(void *arg)
 
 void usb_hid_reattach(void)
 {
+#if CONFIG_KVM_USB_XBOX
+    usb_xbox_reattach();
+    return;
+#endif
     ESP_LOGI(TAG, "re-attaching to the target on request (%d ms off the bus)",
              USB_REATTACH_LONG_MS);
     reattach(USB_REATTACH_LONG_MS);
+}
+
+void usb_hid_prepare_restart(void)
+{
+#if CONFIG_KVM_USB_XBOX
+    usb_xbox_prepare_restart();
+#else
+    if(!s_hid_q)return;
+    s_replugging=true;
+    tud_disconnect();
+    /* A deliberate restart must look like removal, not a device that vanished
+     * while configured and returned having forgotten its USB address. */
+    vTaskDelay(pdMS_TO_TICKS(1000));
+#endif
 }
 
 /* ---- MSC (virtual media) callbacks -------------------------------------- */

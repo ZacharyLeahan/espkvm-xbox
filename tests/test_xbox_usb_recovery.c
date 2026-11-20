@@ -23,5 +23,13 @@ int main(void)
     /* A later unplug starts recovery again without a firmware restart. */
     assert(xbox_usb_recovery_tick(&s,210000001,false,false)==XBOX_USB_DETACH);
     assert(xbox_usb_recovery_tick(&s,211000001,false,false)==XBOX_USB_ATTACH);
+
+    /* The public reattach action uses the same state machine instead of
+     * touching TinyUSB from the web-server task. */
+    xbox_usb_recovery_t requested={0};
+    xbox_usb_recovery_request(&requested,300000000,1000000);
+    assert(xbox_usb_recovery_tick(&requested,300999999,false,false)==XBOX_USB_KEEP);
+    assert(xbox_usb_recovery_tick(&requested,301000000,false,false)==XBOX_USB_ATTACH);
+    assert(requested.retry_at==311000000);
     puts("Xbox USB enumeration recovery timing and suspend protection: PASS");
 }

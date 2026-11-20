@@ -25,3 +25,8 @@ typedef struct {
     int64_t completion_at;
 } usb_xbox_status_t;
 void usb_xbox_status(usb_xbox_status_t *out);
+
+/* These requests are handed to the TinyUSB task; callers never manipulate
+ * XID endpoint state from a web, timer, or restart task. */
+void usb_xbox_reattach(void);
+void usb_xbox_prepare_restart(void);
