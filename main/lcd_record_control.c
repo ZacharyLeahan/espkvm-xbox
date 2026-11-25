@@ -11,6 +11,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <stdio.h>
+#include <string.h>
 
 #if CONFIG_KVM_DSI_STATUS_STRIP
 static portMUX_TYPE s_mu = portMUX_INITIALIZER_UNLOCKED;
@@ -58,7 +59,7 @@ static void worker(void *arg)
         kvm_record_status(&rec);
         if (s_owned && !rec.recording) {
             ESP_LOGI("lcd_record", "recording ended: %s", rec.stopped);
-            snprintf(message, sizeof(message), "RECORDING ENDED");
+            message[0] = 0;
             restore_settings();
         }
         if (pressed) {
@@ -97,13 +98,21 @@ static void worker(void *arg)
             }
             kvm_record_status(&rec);
         }
+        char summary[sizeof(s_state.message)] = "";
+        if (rec.file[0] && !rec.dashcam && !rec.timelapse_every && (rec.recording || !message[0])) {
+            snprintf(summary, sizeof(summary), "%s HDMI %uHZ SD %u.%uFPS",
+                     rec.recording ? "REC" : "LAST", (unsigned)rec.input_hz,
+                     (unsigned)(rec.saved_fps_x100 / 100), (unsigned)(rec.saved_fps_x100 / 10 % 10));
+        } else {
+            snprintf(summary, sizeof(summary), "%s", message);
+        }
         taskENTER_CRITICAL(&s_mu);
         s_state.available = true;
         s_state.recording = rec.recording;
         s_state.local_consumer = rec.recording || rec.dashcam;
         s_state.seconds = rec.seconds;
         if (pressed) s_state.busy = false;
-        snprintf(s_state.message, sizeof(s_state.message), "%s", message);
+        memcpy(s_state.message, summary, sizeof(summary));
         taskEXIT_CRITICAL(&s_mu);
     }
 }
