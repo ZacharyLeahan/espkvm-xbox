@@ -1669,8 +1669,14 @@ static esp_err_t start(uint32_t max_seconds, const char *event_title, uint32_t p
     /* AAC's stack must not consume the internal RAM needed by Wi-Fi and I2S. */
     if (s_audio) stack_caps = MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT;
 #endif
-    if (xTaskCreateWithCaps(writer_task, "kvm_rec_wr", s_audio ? 40960 : 4096, NULL,
-                            s_audio ? FEED_PRIO : WRITER_PRIO, NULL, stack_caps) != pdPASS) {
+    /* The camera task and encoder completion interrupt run on core zero.
+     * AAC can work through several queued blocks without preempting either. */
+    BaseType_t writer_core = tskNO_AFFINITY;
+#if CONFIG_KVM_USB_XBOX && CONFIG_ESP_REV_MIN_FULL >= 300 && configNUMBER_OF_CORES > 1
+    if (s_audio) writer_core = 1;
+#endif
+    if (xTaskCreatePinnedToCoreWithCaps(writer_task, "kvm_rec_wr", s_audio ? 40960 : 4096, NULL,
+                            s_audio ? FEED_PRIO : WRITER_PRIO, NULL, writer_core, stack_caps) != pdPASS) {
         record_audio_close(s_audio);
         s_audio = NULL;
         fclose(s_file);
@@ -1848,6 +1854,9 @@ void kvm_record_status(kvm_record_status_t *out)
         out->seconds = (uint32_t)((esp_timer_get_time() - s_started_us) / 1000000);
     }
     portEXIT_CRITICAL(&s_mu);
+    if (out->frames > 1 && out->video_span_us) {
+        out->saved_fps_x100 = (uint64_t)(out->frames - 1) * 100000000 / out->video_span_us;
+    }
     out->event = s_event;
     out->dashcam = s_dashcam || s_background;
     const int64_t left = s_event && s_event_end_us ? s_event_end_us - esp_timer_get_time() : 0;

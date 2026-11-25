@@ -84,8 +84,7 @@ static esp_err_t send_record_status(httpd_req_t *req)
                            rec.recording ? "true" : "false", rec.file, (unsigned)rec.seconds,
                            (unsigned long long)rec.bytes, (unsigned)rec.frames,
                            (unsigned)rec.input_hz,
-                     (unsigned)(rec.frames > 1 && rec.video_span_us ?
-                         (uint64_t)(rec.frames - 1) * 100000000 / rec.video_span_us : 0),
+                     (unsigned)rec.saved_fps_x100,
                      (unsigned long long)rec.longest_gap_us, (unsigned)rec.audio_rate,
                      (unsigned)rec.queued, (unsigned)rec.peak_queue, (unsigned)rec.max_write_us,
                      (unsigned)rec.dropped, rec.stopped, rec.event ? "true" : "false",

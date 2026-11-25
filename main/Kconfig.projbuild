@@ -430,9 +430,9 @@ menu "ESP-KVM"
             depends on KVM_TC358743_ADV_DEBUG && !KVM_LT6911
             default n
             help
-                Use the existing RGB capture and conversion path to isolate
-                format-dependent CSI failures. This increases frame memory and
-                conversion work; leave disabled for normal performance testing.
+                Keep RGB888 on the CSI wire to isolate format-dependent capture
+                failures. RGB requires three bytes per pixel in PSRAM. On
+                rev 3.x the H.264 encoder can consume that buffer directly.
     endmenu
 
     menu "Board pins"

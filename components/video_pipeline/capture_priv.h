@@ -34,9 +34,8 @@ void capture_dsi_preview_frame(const void *src, uint32_t width, uint32_t height,
  * wait a full source period for a fresh frame - measured ~24 ms idle per frame
  * at 1080p. A third buffer keeps the CSI running so a just-completed frame is
  * always ready the instant the encoder finishes, making the encode time the true
- * period. The direct-encode board captures the smaller YUV422 frames, so the
- * third buffer fits; rev < 3.0 (RGB888 + a separate encode task that already
- * overlaps) keeps two.
+ * period. Rev 3.x uses three buffers with direct encoder input. Earlier revisions
+ * overlap conversion and encoding on separate tasks and retain two.
  */
 #if CAPTURE_DIRECT_ENCODE
 #define CAPTURE_FB_COUNT 3

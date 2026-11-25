@@ -687,8 +687,7 @@ static esp_err_t api_video_status_get(httpd_req_t *req)
                      text_mode ? "true" : "false",
                      (unsigned)st.flat_ms, (unsigned)st.frames, age, (unsigned)st.selected, (unsigned)st.published, rec.recording ? "true" : "false", rec.file,
                      (unsigned)rec.seconds, (unsigned long long)rec.bytes, (unsigned)rec.input_hz,
-                     (unsigned)(rec.frames > 1 && rec.video_span_us ?
-                         (uint64_t)(rec.frames - 1) * 100000000 / rec.video_span_us : 0),
+                     (unsigned)rec.saved_fps_x100,
                      (unsigned long long)rec.longest_gap_us, (unsigned)rec.audio_rate,
                      (unsigned)rec.queued, (unsigned)rec.peak_queue, (unsigned)rec.max_write_us,
                      (unsigned)rec.dropped,

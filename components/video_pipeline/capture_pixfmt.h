@@ -40,7 +40,7 @@ typedef struct {
 
 /*
  * The single revision gate for the whole component. rev >= 3.0 unlocks the
- * esp_h264 direct-input formats (BGR888 today, YUV422 next), so that build feeds
+ * esp_h264 direct-input formats (BGR888 or packed YUV422), so that build feeds
  * the encoder straight from the capture buffer and skips the PPA colour convert;
  * rev < 3.0 keeps the PPA path. Every board difference keys off this one macro.
  */

@@ -33,6 +33,7 @@ typedef struct {
     uint32_t input_hz;
     uint32_t audio_rate;
     uint64_t video_span_us;
+    uint32_t saved_fps_x100;
     uint64_t longest_gap_us;
     uint32_t queued;
     uint32_t peak_queue;
