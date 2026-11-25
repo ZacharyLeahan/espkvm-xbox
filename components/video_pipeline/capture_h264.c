@@ -21,6 +21,7 @@
 
 #include <inttypes.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "driver/ppa.h"
 #include "esp_cache.h"
@@ -71,6 +72,11 @@ static esp_h264_enc_param_hw_handle_t s_param;
  *  It stays true across a codec switch: the encoder keeps both, see
  *  encoder_park(). */
 static bool s_enc_hw_held;
+#if CAPTURE_DIRECT_ENCODE
+/* CSI packs rows tightly. Only an unaligned mode needs a padded copy for DMA. */
+static uint8_t *s_padded_input;
+static uint32_t s_padded_bytes;
+#endif
 static uint8_t *s_buf[H264_SLOTS];
 static uint32_t s_buf_alloc[H264_SLOTS];
 
@@ -737,6 +743,11 @@ fail:
 
 static void h264_close(void)
 {
+#if CAPTURE_DIRECT_ENCODE
+    esp_h264_free(s_padded_input);
+    s_padded_input = NULL;
+    s_padded_bytes = 0;
+#endif
 #if !CAPTURE_DIRECT_ENCODE
     /* Stop the encode task: a negative-slot job is the sentinel it breaks on.
      * Wait for it to finish whatever it was encoding before freeing anything. */
@@ -982,10 +993,26 @@ static esp_err_t h264_encode(capture_ctx_t *c, const void *src, bool force_publi
     }
     const uint32_t bpad_w = MB_ALIGN(c->hres);
     const uint32_t bpad_h = MB_ALIGN(c->vres);
+    const size_t stride = bpad_w * capture_pixfmt_bytes();
+    const uint32_t input_bytes = stride * bpad_h;
+    if (bpad_w != c->hres) {
+        if (s_padded_bytes < input_bytes) {
+            esp_h264_free(s_padded_input);
+            s_padded_bytes = 0;
+            s_padded_input = esp_h264_aligned_calloc(64, 1, input_bytes, &s_padded_bytes,
+                                                     ESP_H264_MEM_SPIRAM);
+            if (!s_padded_input) return ESP_ERR_NO_MEM;
+        }
+        const size_t row_bytes = c->hres * capture_pixfmt_bytes();
+        for (uint32_t y = 0; y < c->vres; ++y) {
+            memcpy(s_padded_input + y * stride, (const uint8_t *)src + y * row_bytes, row_bytes);
+        }
+        src = s_padded_input;
+    }
     const int64_t enc_started_us = esp_timer_get_time();
     esp_h264_enc_in_frame_t in = {
         .raw_data = {.buffer = (uint8_t *)src,
-                     .len = (uint32_t)((size_t)bpad_w * bpad_h * capture_pixfmt_bytes())},
+                     .len = input_bytes},
         .pts = (uint32_t)(esp_timer_get_time() / 1000),
     };
     esp_h264_enc_out_frame_t out = {.raw_data = {.buffer = dst, .len = (uint32_t)cap}};

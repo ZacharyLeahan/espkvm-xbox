@@ -34,9 +34,8 @@ void capture_dsi_preview_frame(const void *src, uint32_t width, uint32_t height,
  * wait a full source period for a fresh frame - measured ~24 ms idle per frame
  * at 1080p. A third buffer keeps the CSI running so a just-completed frame is
  * always ready the instant the encoder finishes, making the encode time the true
- * period. The direct-encode board captures the smaller YUV422 frames, so the
- * third buffer fits; rev < 3.0 (RGB888 + a separate encode task that already
- * overlaps) keeps two.
+ * period. Rev 3.x uses three buffers with direct encoder input. Earlier revisions
+ * overlap conversion and encoding on separate tasks and retain two.
  */
 #if CAPTURE_DIRECT_ENCODE
 #define CAPTURE_FB_COUNT 3
@@ -63,8 +62,12 @@ void capture_dsi_preview_frame(const void *src, uint32_t width, uint32_t height,
  * Gated on the same rev macro as the pixel format, so the rev < 3.0 build's buffer
  * size is byte-for-byte unchanged. See capture_pixfmt.h. */
 #define CAPTURE_MAX_V_ALLOC (((CAPTURE_MAX_V_RES + 15u) / 16u) * 16u)
-/* rev >= 3.0 captures packed YUV422 at 2 bytes/px. */
+/* The Xbox bridge needs RGB on the wire even with a direct-input encoder. */
+#if CONFIG_KVM_CAPTURE_DEBUG_RGB
+#define CAPTURE_MAX_PIXEL_BYTES 3u
+#else
 #define CAPTURE_MAX_PIXEL_BYTES 2u
+#endif
 #elif CAPTURE_YUV_SWAP
 /* An LT6911D sends packed YUV422 whatever the revision, so the ring is two
  * bytes a pixel here as well - sizing it for RGB888 would hold 4 MB of
@@ -109,6 +112,7 @@ typedef struct {
      */
     portMUX_TYPE fb_lock;
     volatile int write_fb_idx; /* buffer the DMA is filling now, -1 = drop_fb */
+    uint32_t ready_generation; /* advanced only for usable CSI completions */
     volatile int ready_fb_idx; /* newest completed buffer, -1 = none yet */
     volatile int held_fb_idx;  /* buffer the encode is reading, -1 = none */
     SemaphoreHandle_t csi_done_sem;
@@ -323,6 +327,7 @@ void capture_status_set_signal(bool present, uint8_t sys_status);
 /** Measured input refresh (0 unknown), and whether the mode is over the lane limit. */
 void capture_status_set_input(uint8_t hz, bool too_fast);
 void capture_status_add_frame(size_t bytes);
+void capture_status_frame_selected(void);
 /** An encoded frame identical to the last published one. */
 void capture_status_add_skipped(void);
 /** Time one encode took, in microseconds (the encoder alone, not any colour

@@ -120,7 +120,9 @@ void capture_loop_run(capture_ctx_t *c)
 
     int64_t hdmi_recover_cooldown_until_us = 0;
     int64_t switch_retry_us = 0; /* after a refused codec switch */
-    int64_t last_encode_us = 0;
+    int64_t next_encode_us = 0;
+    int previous_cap = 0;
+    uint32_t last_generation = 0;
     /* Set after anything that invalidates what clients are holding. */
     bool force_publish = true;
 #if CONFIG_KVM_TC358743_ADV_DEBUG
@@ -333,13 +335,14 @@ void capture_loop_run(capture_ctx_t *c)
             vTaskDelay(pdMS_TO_TICKS(200));
             continue;
         }
-        if (fps_max > 0) {
-            const int64_t min_interval_us = 1000000 / fps_max;
-            const int64_t now_us = esp_timer_get_time();
-            if (now_us - last_encode_us < min_interval_us) {
-                continue;
-            }
-            last_encode_us = now_us;
+        const int64_t now_us = esp_timer_get_time();
+        const int64_t period_us = fps_max > 0 ? 1000000 / fps_max : 0;
+        if (fps_max != previous_cap) {
+            next_encode_us = 0;
+            previous_cap = fps_max;
+        }
+        if (period_us && now_us < next_encode_us) {
+            continue;
         }
         /*
          * Take the newest complete frame and hold it for the whole encode: marking
@@ -347,7 +350,9 @@ void capture_loop_run(capture_ctx_t *c)
          * free-running CSI DMA cannot overwrite it mid-read. Released right after.
          */
         portENTER_CRITICAL(&c->fb_lock);
-        const int hidx = c->ready_fb_idx;
+        /* A CSI completion in the discard buffer also wakes this task. */
+        const int hidx = c->ready_generation != last_generation ? c->ready_fb_idx : -1;
+        last_generation = c->ready_generation;
         c->held_fb_idx = hidx;
         portEXIT_CRITICAL(&c->fb_lock);
         if (hidx < 0) {
@@ -360,6 +365,12 @@ void capture_loop_run(capture_ctx_t *c)
             portEXIT_CRITICAL(&c->fb_lock);
             vTaskDelay(pdMS_TO_TICKS(100));
             continue;
+        }
+        /* Keep the target clock across small CSI wake-up jitter. A late frame
+         * uses one slot; never catch up by encoding the same capture twice. */
+        if (period_us) {
+            next_encode_us += period_us;
+            if (next_encode_us <= now_us) next_encode_us = now_us + period_us;
         }
         void *src = c->fb[hidx];
 
@@ -407,6 +418,7 @@ void capture_loop_run(capture_ctx_t *c)
         capture_snapshot_tick(c, src);
 #endif
 
+        capture_status_frame_selected();
         esp_err_t ee = codec->encode(c, src, force_publish);
         if (ee == ESP_OK) {
             force_publish = false;

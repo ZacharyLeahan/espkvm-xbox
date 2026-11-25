@@ -76,13 +76,18 @@ static esp_err_t send_record_status(httpd_req_t *req)
     char body[896];
     const int n = snprintf(body, sizeof(body),
                            "{\"on\":%s,\"file\":\"%s\",\"seconds\":%u,\"bytes\":%llu,\"frames\":%u,"
-                           "\"dropped\":%u,\"stopped\":\"%s\",\"event\":%s,\"dashcam\":%s,"
+                           "\"inputHz\":%u,\"savedFpsX100\":%u,\"longestGapUs\":%llu,\"audioRate\":%u,"
+                     "\"queued\":%u,\"peakQueue\":%u,\"maxWriteUs\":%u,\"dropped\":%u,\"stopped\":\"%s\",\"event\":%s,\"dashcam\":%s,"
                            "\"prerollSeconds\":%u,\"timelapse\":%u,\"clipSecondsLeft\":%u,"
                            "\"clipsConverting\":%u,\"lastClip\":\"%s\",\"audio\":%s,"
                            "\"audioFrames\":%llu,\"audioDropped\":%llu,\"audioSilenceFrames\":%llu}",
                            rec.recording ? "true" : "false", rec.file, (unsigned)rec.seconds,
                            (unsigned long long)rec.bytes, (unsigned)rec.frames,
-                           (unsigned)rec.dropped, rec.stopped, rec.event ? "true" : "false",
+                           (unsigned)rec.input_hz,
+                     (unsigned)rec.saved_fps_x100,
+                     (unsigned long long)rec.longest_gap_us, (unsigned)rec.audio_rate,
+                     (unsigned)rec.queued, (unsigned)rec.peak_queue, (unsigned)rec.max_write_us,
+                     (unsigned)rec.dropped, rec.stopped, rec.event ? "true" : "false",
                            rec.dashcam ? "true" : "false", (unsigned)rec.preroll_seconds,
                            (unsigned)rec.timelapse_every, (unsigned)rec.clip_seconds_left,
                            (unsigned)rec.clips_converting, rec.last_clip, rec.audio ? "true" : "false",

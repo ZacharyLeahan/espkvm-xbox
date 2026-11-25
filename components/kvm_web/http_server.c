@@ -664,10 +664,11 @@ static esp_err_t api_video_status_get(httpd_req_t *req)
                      /* How long the picture has been one flat colour: the shape
                         of a stop screen or a blanked output, neither of which
                         can be read as text. 0 means it is a picture. */
-                     "\"textMode\":%s,\"flatMs\":%u,\"frames\":%u,\"frameAgeMs\":%s,"
+                     "\"textMode\":%s,\"flatMs\":%u,\"frames\":%u,\"frameAgeMs\":%s,\"selected\":%u,\"published\":%u,"
                      /* The recorder rides along: the console polls this anyway. */
                      "\"record\":{\"on\":%s,\"file\":\"%s\",\"seconds\":%u,\"bytes\":%llu,"
-                     "\"dropped\":%u,\"stopped\":\"%s\",\"blocked\":%s%s%s,"
+                     "\"inputHz\":%u,\"savedFpsX100\":%u,\"longestGapUs\":%llu,\"audioRate\":%u,"
+                     "\"queued\":%u,\"peakQueue\":%u,\"maxWriteUs\":%u,\"dropped\":%u,\"stopped\":\"%s\",\"blocked\":%s%s%s,"
                      "\"event\":%s,\"dashcam\":%s,\"dashcamNoMemory\":%s,\"prerollSeconds\":%u,"
                      "\"timelapse\":%u,\"clipSecondsLeft\":%u,\"clipsConverting\":%u,"
                      "\"lastClip\":\"%s\",\"audio\":%s,\"audioFrames\":%llu,"
@@ -684,8 +685,12 @@ static esp_err_t api_video_status_get(httpd_req_t *req)
                      video_frame_viewer_count(), (unsigned)s_video_client_count,
                      (unsigned)s_text_client_count, s_stream_workers, codec,
                      text_mode ? "true" : "false",
-                     (unsigned)st.flat_ms, (unsigned)st.frames, age, rec.recording ? "true" : "false", rec.file,
-                     (unsigned)rec.seconds, (unsigned long long)rec.bytes, (unsigned)rec.dropped,
+                     (unsigned)st.flat_ms, (unsigned)st.frames, age, (unsigned)st.selected, (unsigned)st.published, rec.recording ? "true" : "false", rec.file,
+                     (unsigned)rec.seconds, (unsigned long long)rec.bytes, (unsigned)rec.input_hz,
+                     (unsigned)rec.saved_fps_x100,
+                     (unsigned long long)rec.longest_gap_us, (unsigned)rec.audio_rate,
+                     (unsigned)rec.queued, (unsigned)rec.peak_queue, (unsigned)rec.max_write_us,
+                     (unsigned)rec.dropped,
                      rec.stopped, rec_blocked ? "\"" : "", rec_blocked ? rec_blocked : "null",
                      rec_blocked ? "\"" : "", rec.event ? "true" : "false",
                      rec.dashcam ? "true" : "false", rec.dashcam_no_memory ? "true" : "false",

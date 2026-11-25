@@ -364,6 +364,7 @@ static bool IRAM_ATTR cam_on_done(esp_cam_ctlr_handle_t h, esp_cam_ctlr_trans_t 
         if (idx >= 0) {
             portENTER_CRITICAL_ISR(&c->fb_lock);
             c->ready_fb_idx = idx;
+            c->ready_generation++;
             portEXIT_CRITICAL_ISR(&c->fb_lock);
             c->done_fb = trans->buffer;
         }

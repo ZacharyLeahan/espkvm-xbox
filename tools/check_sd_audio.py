@@ -27,7 +27,8 @@ import urllib.request
 ROOT = Path(__file__).resolve().parents[1]
 VIDEO_SETTINGS = {'vid_codec': 1, 'vid_fps_max': 30, 'h264_kbps': 4000}
 RECORD_FIELDS = ('on', 'file', 'seconds', 'bytes', 'frames', 'dropped', 'stopped',
-                 'dashcam', 'audio', 'audioFrames', 'audioDropped', 'audioSilenceFrames')
+                 'dashcam', 'audio', 'audioFrames', 'audioDropped', 'audioSilenceFrames',
+                 'inputHz', 'savedFpsX100', 'longestGapUs', 'audioRate', 'queued', 'peakQueue', 'maxWriteUs')
 
 
 class CheckFailed(Exception):

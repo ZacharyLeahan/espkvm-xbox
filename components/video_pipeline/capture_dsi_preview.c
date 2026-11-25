@@ -986,21 +986,23 @@ bool capture_dsi_preview_due(void)
 {
     capture_lcd_record_state_t record;
     capture_lcd_record_state(&record);
-    /* The recorder is one encoded-frame consumer, not a remote spectator. */
-    const bool remote = video_frame_viewer_count() > (record.local_consumer ? 1 : 0);
-    const int fps = kvm_thermal_fps_limit(remote ? PREVIEW_REMOTE_FPS : PREVIEW_LOCAL_FPS);
+    /* The card and remote video both need the capture task ahead of the panel. */
+    const int consumers = video_frame_viewer_count();
+    const bool remote = consumers > (record.local_consumer ? 1 : 0);
+    const bool encoding = remote || (record.recording && s_last_h >= 720);
+    const int fps = kvm_thermal_fps_limit(encoding ? PREVIEW_REMOTE_FPS : PREVIEW_LOCAL_FPS);
     if (!s_fb || fps <= 0 || (int32_t)(s_dma_frames - s_reuse_after[s_draw_index]) < 0) {
         return false;
     }
-    if (s_last_priority != (int)remote) {
-        s_last_priority = remote;
-        ESP_LOGI(TAG, "priority: %s", remote ? "remote (LCD <=1 fps, <=5% copy duty)"
+    if (s_last_priority != (int)encoding) {
+        s_last_priority = encoding;
+        ESP_LOGI(TAG, "priority: %s", encoding ? "encoding (LCD <=1 fps, <=5% copy duty)"
                                             : "LCD (<=60 fps, general<=80% / fast<=90% duty)");
     }
     /* Bound CPU work as well as FPS. Always leave time for network/control
      * tasks, and back off automatically when the scaler takes longer. */
     int64_t interval = 1000000 / fps;
-    const int64_t budget = remote ? s_last_cost_us * 20 :
+    const int64_t budget = encoding ? s_last_cost_us * 20 :
         (s_last_fast_path ? s_last_cost_us * 10 / 9 : s_last_cost_us * 5 / 4);
     if (budget > interval) {
         interval = budget;

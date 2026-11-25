@@ -9,7 +9,7 @@
 #include "esp_h264_enc_single_hw.h"
 #include "driver/jpeg_encode.h"
 
-#if !CAPTURE_DIRECT_ENCODE && !CAPTURE_YUV_SWAP
+#if (!CAPTURE_DIRECT_ENCODE && !CAPTURE_YUV_SWAP) || CONFIG_KVM_CAPTURE_DEBUG_RGB
 /*
  * rev < 3.0 (Waveshare): capture RGB888 at 0x24, and a PPA pass turns it into
  * YUV420 for whichever encoder is running. This is the original, shared path.
@@ -18,18 +18,18 @@ static const capture_pixfmt_t k_rgb888 = {
     .name = "rgb888",
     .csi_dt = 0x24u,
     .bpp = 24u,
-    .v_align_mb = false,
-    .direct = false,
+    .v_align_mb = CAPTURE_DIRECT_ENCODE,
+    .direct = CAPTURE_DIRECT_ENCODE,
     .cam_color = CAM_CTLR_COLOR_RGB888,
     .isp_color = ISP_COLOR_RGB888,
-    .h264_pic = ESP_H264_RAW_FMT_O_UYY_E_VYY,
+    .h264_pic = CAPTURE_DIRECT_ENCODE ? ESP_H264_RAW_FMT_BGR888 : ESP_H264_RAW_FMT_O_UYY_E_VYY,
     .jpeg_src = JPEG_ENCODE_IN_FORMAT_RGB888,
     /* RGB in: the engine converts and can subsample to 4:2:0. */
     .jpeg_subsample = JPEG_DOWN_SAMPLING_YUV420,
 };
 #endif
 
-#if CAPTURE_DIRECT_ENCODE
+#if CAPTURE_DIRECT_ENCODE && !CONFIG_KVM_CAPTURE_DEBUG_RGB
 /*
  * rev >= 3.0 (Function-EV): capture native YUV422 (UYVY, 2 bytes/px) at 0x1e and
  * feed it to the encoder directly - no PPA, and a third less CSI-DMA PSRAM traffic
@@ -89,7 +89,7 @@ static const capture_pixfmt_t k_yuv422_swap = {
 
 const capture_pixfmt_t *capture_pixfmt(void)
 {
-#if CAPTURE_DIRECT_ENCODE
+#if CAPTURE_DIRECT_ENCODE && !CONFIG_KVM_CAPTURE_DEBUG_RGB
     return &k_direct;
 #elif CAPTURE_YUV_SWAP
     return &k_yuv422_swap;

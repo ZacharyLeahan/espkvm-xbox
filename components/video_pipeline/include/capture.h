@@ -44,6 +44,8 @@ typedef struct {
     bool flat_dark;
     /** CSI completions since boot (wraps at UINT32_MAX), including drop buffers. */
     uint32_t frames;
+    uint32_t selected;  /**< fresh frames handed to the active codec */
+    uint32_t published; /**< encoded frames published for consumers */
     /** Age of the last CSI completion, UINT32_MAX before any frame. */
     uint32_t frame_age_ms;
 } kvm_video_status_t;
