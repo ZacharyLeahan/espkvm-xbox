@@ -63,8 +63,12 @@ void capture_dsi_preview_frame(const void *src, uint32_t width, uint32_t height,
  * Gated on the same rev macro as the pixel format, so the rev < 3.0 build's buffer
  * size is byte-for-byte unchanged. See capture_pixfmt.h. */
 #define CAPTURE_MAX_V_ALLOC (((CAPTURE_MAX_V_RES + 15u) / 16u) * 16u)
-/* rev >= 3.0 captures packed YUV422 at 2 bytes/px. */
+/* The Xbox bridge needs RGB on the wire even with a direct-input encoder. */
+#if CONFIG_KVM_CAPTURE_DEBUG_RGB
+#define CAPTURE_MAX_PIXEL_BYTES 3u
+#else
 #define CAPTURE_MAX_PIXEL_BYTES 2u
+#endif
 #elif CAPTURE_YUV_SWAP
 /* An LT6911D sends packed YUV422 whatever the revision, so the ring is two
  * bytes a pixel here as well - sizing it for RGB888 would hold 4 MB of
