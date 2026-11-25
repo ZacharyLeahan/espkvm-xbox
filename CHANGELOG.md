@@ -7,6 +7,8 @@ bumps the patch).
 
 ## [Unreleased]
 
+- Show HDMI input Hz, actual SD recording FPS, longest saved-frame gap and audio loss in the console. Use direct H.264 input on the rev 3 Xbox RGB capture profile.
+
 - Keep P1 DIRECT USB alongside Wi-Fi P2-P4 with opt-in mixed routing. Show all
   four player status tiles and ESP LAN IPs in a compact LCD header. Open
   controller IPs, report counters and input details only after a tile tap;

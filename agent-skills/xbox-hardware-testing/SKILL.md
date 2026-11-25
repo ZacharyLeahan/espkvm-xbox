@@ -51,6 +51,12 @@ recovery after a hard freeze. Incoming serial/debug BIOS/XBDM/power hardware is
 not commissioned merely because it was planned. Never infer game liveness from
 HDMI lock, a responding KVM, USB completion counts or a successful build alone.
 
+For recording cadence, compare HDMI input Hz with the recorder's
+`savedFpsX100 / 100` and check `longestGapUs`, `audioRate`, `audioDropped`
+and `audioSilenceFrames` after Stop. Use the
+[matched gameplay test](../../docs/SD-RECORDING.md#measure-native-720p-gameplay-cadence)
+to validate the card TS.
+
 Store private run evidence under the tooling repo's ignored `observations/`,
 with new directories per attempt, and summarize actual results back in the game
 repo when relevant. Preserve the game checkout's working state. Change shared

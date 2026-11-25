@@ -33,6 +33,84 @@ capture/queue diagnostics, not proof of perceptual synchronization or sound qual
 Keep private firmware backups and credentials out of published evidence. Do not
 format the card for a test.
 
+## Measure native 720p gameplay cadence
+
+1. Use the same map, spawn area, HDMI mode, encoder bitrate, frame cap and
+   stereo audio settings on both builds. On ac_desert, hold the right stick
+   horizontally at about 44%, reverse every 2.3 seconds, and alternate left
+   and right strafe at about 67% every 1.3 seconds. Start moving before Record
+   and release both sticks after Stop. Keep each take on the card.
+2. Close live video on every client. Check `wsClients` and `imgClients` in
+   `GET /api/v1/video/status` throughout the take; both should be zero.
+   The recorder itself contributes to `viewers`. Repeat with one open video
+   viewer, checking which transport actually subscribed. Keep network audio
+   in the same state for all runs.
+3. With HDMI audio enabled, use the bounded recorder helper below. Substitute
+   the existing H.264 bitrate and use a new output directory per take.
+
+   ```sh
+   python tools/check_sd_audio.py http://esp.local --seconds 30 --h264-kbps 4000 --no-network-audio --output-dir observations/before-closed
+   python tools/measure_sd_cadence.py observations/before-closed/card-recording.ts
+   ```
+
+4. Sample video status about once per second during motion. Compare deltas of
+   `frames` (all CSI completions), `selected` (fresh inputs handed to a codec)
+   and `published` (encoded output). Record status adds `queued`, `peakQueue`
+   (frames), `maxWriteUs` (longest buffered card write), and `frames` (muxed
+   video frames). A queued frame beyond a bounded stop can remain unwritten.
+   Compare these with `encodeUs`, `ppaUs` and the fully decoded card file.
+5. The analyzer decodes both tracks through EOF and measures adjacent decoded
+   video PTS. Saved fps is (frames minus one) divided by the first-to-last PTS
+   span. P95 uses nearest rank. Convert dropped PCM and inserted silence to ms
+   separately using 1000 times each count divided by the recorded sample rate.
+   Silence can include alignment and AAC padding as well as replacement for
+   lost PCM. Adding the two durations would double-count loss. The video
+   `dropped` counter counts detected encoded-sequence breaks and failed
+   recorder ring pushes. It excludes capture/encoder selection and dependent
+   frames skipped while waiting for the next keyframe.
+6. Verify 1280x720 H.264 and stereo AAC, review motion and colors, then run
+   `ffmpeg -i clip.ts -c copy clip.mp4` on the chosen take. Check the recording
+   stopped and the original settings were restored.
+
+### Physical Xbox comparison, 2026-11-25
+
+Function EV rev 3.2, C790, AssaultCube LAN on ac_desert, 1280x720p60,
+30 fps cap, 4000 kbit/s H.264 target and 48 kHz stereo HDMI audio. Four
+30-second takes used the same alternating sticks on the verified P4 receiver.
+A temporary HTTP port isolated the comparison from a reconnecting viewer.
+The open runs used one Chrome console with WebCodecs and network audio off.
+All four TS files passed strict full decode. Adjacent half-second samples
+showed scene movement throughout each take. Stationary trials were excluded.
+
+| Pipeline and viewer | Card file under VIDEO/ | Frames | Saved fps | Median / p95 / max gap (ms) | Dropped / silence (ms) |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Original, closed | up-000028-4.ts | 264 | 8.78 | 112.9 / 148.8 / 196.7 | 0 / 13.4 |
+| Updated, closed | up-000258.ts | 699 | 23.28 | 40.2 / 50.3 / 146.6 | 0 / 17.9 |
+| Original, open | up-000087.ts | 365 | 12.17 | 75.1 / 139.8 / 208.1 | 0 / 0.6 |
+| Updated, open | up-000351.ts | 681 | 22.67 | 41.1 / 52.9 / 150.4 | 0 / 15.4 |
+
+The original closed-viewer run gave the LCD its high-rate local preview
+budget while recording. The original image also converted every selected
+RGB frame through the PPA. The updated image budgets the LCD during 720p
+recording, feeds the RGB buffers directly to the rev 3 H.264 encoder, and
+runs AAC/card writing on the other core.
+
+The updated closed/open samples respectively measured 60.08/59.95 CSI
+completions per second, 23.37/22.61 selected and 23.37/22.65 published.
+The recorder queued 705/688 frames across start and stop, with peak queue
+depths of 18/7 and longest buffered card writes of 152/101 ms. It muxed
+699/681 frames, exactly matching the decoded files. Neither recorder
+reported a video queue/reference loss. Median one-second encoder timings
+were 35.3/36.1 ms, already above the 33.3 ms total budget for 30 fps.
+Conversion time fell to zero. These runs establish the observed throughput
+of this workload; absolute silicon limits were not measured.
+
+The bitrate setting was identical. Actual TS throughput, including stereo
+audio and mux overhead, was 4.35/5.23 Mbit/s on the original closed/open
+runs and 10.51/9.57 Mbit/s on the updated runs. Allow for that increase in
+card space. The runtime input rate, saved FPS and final loss summary are in
+the web console. The LCD status strip also shows input Hz and saved FPS.
+
 ## Ten-minute combined test (2026-10-17)
 
 With live video and PCM streaming, `VIDEO/up-001362.ts` saved 7,580 video frames
@@ -280,10 +358,9 @@ capture allocations**, instead of reserving for 1920x1080. 480p and 720p stay
 within that bound; larger inputs are not supported by this profile. Keep the
 normal profile for 1080p, and retain a known-good private rollback image.
 
-Local recording is no longer treated as a remote viewer for the LCD's 1-fps
-limit. Additional video consumers still receive remote priority. Both outputs
-target smooth video, but simultaneous rates require hardware measurement;
-30 fps on each is a target, not a guarantee.
+During a 720p or larger recording the LCD uses the remote-viewer preview
+budget (at most one update per second). Local 480p recording retains its
+higher LCD preview budget. The stored file always uses the source resolution.
 
 First simultaneous 480p result (2026-10-04): the user verified the top-right
 Record/Stop taps, timer, and smooth picture. A longer clip stopped from the
