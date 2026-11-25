@@ -30,7 +30,14 @@ typedef struct {
     uint32_t seconds;
     uint64_t bytes;
     uint32_t frames;
-    /** Frames left out: the card fell behind, or the stream skipped one. */
+    uint32_t input_hz;
+    uint32_t audio_rate;
+    uint64_t video_span_us;
+    uint64_t longest_gap_us;
+    uint32_t queued;
+    uint32_t peak_queue;
+    uint32_t max_write_us;
+    /** Sequence breaks and rejected ring pushes while recording. */
     uint32_t dropped;
     /** AAC track selected at start; frames are PCM samples per channel. */
     bool audio;

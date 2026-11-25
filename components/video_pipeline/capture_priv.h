@@ -113,6 +113,7 @@ typedef struct {
      */
     portMUX_TYPE fb_lock;
     volatile int write_fb_idx; /* buffer the DMA is filling now, -1 = drop_fb */
+    uint32_t ready_generation; /* advanced only for usable CSI completions */
     volatile int ready_fb_idx; /* newest completed buffer, -1 = none yet */
     volatile int held_fb_idx;  /* buffer the encode is reading, -1 = none */
     SemaphoreHandle_t csi_done_sem;
@@ -327,6 +328,7 @@ void capture_status_set_signal(bool present, uint8_t sys_status);
 /** Measured input refresh (0 unknown), and whether the mode is over the lane limit. */
 void capture_status_set_input(uint8_t hz, bool too_fast);
 void capture_status_add_frame(size_t bytes);
+void capture_status_frame_selected(void);
 /** An encoded frame identical to the last published one. */
 void capture_status_add_skipped(void);
 /** Time one encode took, in microseconds (the encoder alone, not any colour

@@ -51,6 +51,7 @@
 #include "freertos/idf_additions.h"
 #include "keylog.h"
 #include "kvm_settings.h"
+#include "kvm_audio.h"
 #include "kvm_storage.h"
 #include "record_priv.h"
 #include "record_audio.h"
@@ -789,6 +790,12 @@ static void feed_task(void *arg)
         xSemaphoreTake(s_ring_mu, portMAX_DELAY);
         const bool kept = s_ring_buf &&
                           frame_ring_push(&s_ring, f.data, f.len, f.at_us, f.keyframe, evict);
+        if (kept && s_active) {
+            portENTER_CRITICAL(&s_mu);
+            s_st.queued++;
+            if (s_ring.count > s_st.peak_queue) s_st.peak_queue = s_ring.count;
+            portEXIT_CRITICAL(&s_mu);
+        }
         xSemaphoreGive(s_ring_mu);
         video_frame_release(&f);
         if (!kept) {
@@ -1269,10 +1276,16 @@ static void writer_task(void *arg)
                 if (last_video_us && e.at_us - last_video_us < 100000) {
                     video_step_us = e.at_us - last_video_us;
                 }
+                const int64_t gap_us = last_video_us ? e.at_us - last_video_us : 0;
                 last_video_us = e.at_us;
                 if (!write_audio(&mux, e.at_us, false)) break;
                 portENTER_CRITICAL(&s_mu);
-                s_st.frames++;
+                if (!s_write_failed) {
+                    s_st.frames++;
+                    s_st.video_span_us = e.at_us - t0_us;
+                    if (gap_us > (int64_t)s_st.longest_gap_us) s_st.longest_gap_us = gap_us;
+                    s_st.max_write_us = s_card_write_max_us;
+                }
                 portEXIT_CRITICAL(&s_mu);
             }
         }
@@ -1323,6 +1336,7 @@ static void writer_task(void *arg)
     memset(&done, 0, sizeof(done));
     portENTER_CRITICAL(&s_mu);
     s_st.recording = false;
+    s_st.max_write_us = s_card_write_max_us;
     const kvm_record_status_t st = s_st;
     done.event = s_event;
     done.timelapse = s_every_us != 0;
@@ -1616,6 +1630,8 @@ static esp_err_t start(uint32_t max_seconds, const char *event_title, uint32_t p
         }
     }
 
+    kvm_video_status_t source;
+    capture_status_get(&source);
     portENTER_CRITICAL(&s_mu);
     if (!background) {
         memset(&s_st, 0, sizeof(s_st));
@@ -1624,6 +1640,8 @@ static esp_err_t start(uint32_t max_seconds, const char *event_title, uint32_t p
         snprintf(s_st.file, sizeof(s_st.file), "%s", rel);
         s_started_us = now;
     }
+    s_st.input_hz = source.input_hz;
+    s_st.audio_rate = s_audio ? kvm_audio_rate() : 0;
     s_st.audio = s_audio != NULL;
     s_st.audio_frames = 0;
     s_st.audio_dropped = 0;

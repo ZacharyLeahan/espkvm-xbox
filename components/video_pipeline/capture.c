@@ -70,10 +70,18 @@ void capture_status_set_signal(bool present, uint8_t sys_status)
     taskEXIT_CRITICAL(&s_mu);
 }
 
+void capture_status_frame_selected(void)
+{
+    taskENTER_CRITICAL(&s_mu);
+    s_status.selected++;
+    taskEXIT_CRITICAL(&s_mu);
+}
+
 void capture_status_add_frame(size_t bytes)
 {
     taskENTER_CRITICAL(&s_mu);
     s_window_frames++;
+    s_status.published++;
     s_window_bytes += bytes;
     taskEXIT_CRITICAL(&s_mu);
 }

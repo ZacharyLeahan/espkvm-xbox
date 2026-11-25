@@ -121,6 +121,7 @@ void capture_loop_run(capture_ctx_t *c)
     int64_t hdmi_recover_cooldown_until_us = 0;
     int64_t switch_retry_us = 0; /* after a refused codec switch */
     int64_t last_encode_us = 0;
+    uint32_t last_generation = 0;
     /* Set after anything that invalidates what clients are holding. */
     bool force_publish = true;
 #if CONFIG_KVM_TC358743_ADV_DEBUG
@@ -347,7 +348,9 @@ void capture_loop_run(capture_ctx_t *c)
          * free-running CSI DMA cannot overwrite it mid-read. Released right after.
          */
         portENTER_CRITICAL(&c->fb_lock);
-        const int hidx = c->ready_fb_idx;
+        /* A CSI completion in the discard buffer also wakes this task. */
+        const int hidx = c->ready_generation != last_generation ? c->ready_fb_idx : -1;
+        last_generation = c->ready_generation;
         c->held_fb_idx = hidx;
         portEXIT_CRITICAL(&c->fb_lock);
         if (hidx < 0) {
@@ -407,6 +410,7 @@ void capture_loop_run(capture_ctx_t *c)
         capture_snapshot_tick(c, src);
 #endif
 
+        capture_status_frame_selected();
         esp_err_t ee = codec->encode(c, src, force_publish);
         if (ee == ESP_OK) {
             force_publish = false;
